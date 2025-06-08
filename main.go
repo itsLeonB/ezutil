@@ -37,7 +37,7 @@ const (
 
 // endregion
 
-// region Gin Utils
+// GetParam retrieves a parameter from the Gin context by type and key, parses it into type T, and returns the value, a boolean indicating existence, and an error if parsing fails.
 
 func GetParam[T any](ctx *gin.Context, paramType types.ParamType, key string) (T, bool, error) {
 	var zero T
@@ -55,6 +55,8 @@ func GetParam[T any](ctx *gin.Context, paramType types.ParamType, key string) (T
 	return parsedValue, true, nil
 }
 
+// GetPagination extracts pagination parameters from the Gin context, applying defaults if missing or invalid.
+// Returns a QueryOptions struct with validated page and limit values, or an error if parsing fails.
 func GetPagination(ctx *gin.Context, defaultLimit int) (QueryOptions, error) {
 	page, exists, err := GetParam[int](ctx, QueryParam, "page")
 	if err != nil {
@@ -75,6 +77,8 @@ func GetPagination(ctx *gin.Context, defaultLimit int) (QueryOptions, error) {
 	return QueryOptions{Page: page, Limit: limit}, nil
 }
 
+// BindRequest binds request data from the Gin context to a struct of type T using the specified binding type.
+// Returns the populated struct or an error if binding fails or the bind type is unsupported.
 func BindRequest[T any](ctx *gin.Context, bindType types.BindType) (T, error) {
 	var zero T
 
@@ -96,7 +100,7 @@ func BindRequest[T any](ctx *gin.Context, bindType types.BindType) (T, error) {
 
 // endregion
 
-// region Gorm Utils
+// Paginate returns a Gorm scope function that applies pagination using the specified page and limit. Page numbers less than 1 are treated as 1.
 
 func Paginate(page, limit int) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
@@ -110,6 +114,7 @@ func Paginate(page, limit int) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// OrderBy returns a Gorm scope function that orders query results by the specified field in ascending or descending order.
 func OrderBy(field string, ascending bool) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if ascending {
@@ -120,12 +125,14 @@ func OrderBy(field string, ascending bool) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// WhereBySpec returns a Gorm scope function that applies a WHERE clause using the provided spec struct.
 func WhereBySpec[T any](db *gorm.DB, spec T) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(&spec)
 	}
 }
 
+// PreloadRelations returns a Gorm scope function that preloads the specified relations for a query.
 func PreloadRelations(relations []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		for _, relation := range relations {
@@ -136,6 +143,7 @@ func PreloadRelations(relations []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// WithinTransaction executes the provided function within a database transaction, rolling back on error and committing on success. Returns an error if the transaction fails.
 func WithinTransaction(db *gorm.DB, fn func(tx *gorm.DB) error) error {
 	tx := db.Begin()
 
@@ -151,7 +159,7 @@ func WithinTransaction(db *gorm.DB, fn func(tx *gorm.DB) error) error {
 
 // endregion
 
-// region Slice Utils
+// MapSlice applies a mapping function to each element of the input slice and returns a new slice with the mapped values.
 
 func MapSlice[T any, U any](input []T, mapperFunc func(T) U) []U {
 	output := make([]U, len(input))
@@ -165,7 +173,8 @@ func MapSlice[T any, U any](input []T, mapperFunc func(T) U) []U {
 
 // endregion
 
-// region Time Utils
+// GetStartOfDay returns the UTC time at 00:00:00 for the specified date.
+// Returns an error if the provided year, month, or day is invalid or if the date cannot be parsed.
 
 func GetStartOfDay(year int, month int, day int) (time.Time, error) {
 	if year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 {
@@ -181,6 +190,8 @@ func GetStartOfDay(year int, month int, day int) (time.Time, error) {
 	return t, nil
 }
 
+// GetEndOfDay returns a UTC time representing 23:59:59 on the specified date.
+// Returns an error if the provided date components are invalid or cannot be parsed.
 func GetEndOfDay(year int, month int, day int) (time.Time, error) {
 	if year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 {
 		return time.Time{}, eris.Errorf("invalid date: %d-%02d-%02d", year, month, day)
@@ -197,7 +208,7 @@ func GetEndOfDay(year int, month int, day int) (time.Time, error) {
 
 // endregion
 
-// region HTTP Utils
+// ServeGracefully starts the HTTP server and shuts it down gracefully on receiving an interrupt or termination signal, allowing active connections to complete within the specified timeout.
 
 func ServeGracefully(srv *http.Server, timeout time.Duration) {
 	go func() {
@@ -225,7 +236,8 @@ func ServeGracefully(srv *http.Server, timeout time.Duration) {
 
 // endregion
 
-// region String Utils
+// Parse converts a string to the specified type T, supporting string, int, bool, and uuid.UUID.
+// Returns an error if parsing fails or if the type is unsupported.
 
 func Parse[T any](value string) (T, error) {
 	var zero T
