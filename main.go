@@ -68,7 +68,10 @@ func GetPagination(ctx *gin.Context, defaultLimit int) (QueryOptions, error) {
 	if err != nil {
 		return QueryOptions{}, eris.Wrapf(err, "failed to get 'limit' parameter")
 	}
-	if !exists || limit < 1 || defaultLimit < 1 {
+	if !exists || limit < 1 {
+		if defaultLimit < 1 {
+			return QueryOptions{}, eris.Errorf("invalid default limit: %d", defaultLimit)
+		}
 		limit = defaultLimit // Default limit
 	}
 
@@ -120,7 +123,7 @@ func OrderBy(field string, ascending bool) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func WhereBySpec[T any](db *gorm.DB, spec T) func(db *gorm.DB) *gorm.DB {
+func WhereBySpec[T any](spec T) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(&spec)
 	}
@@ -138,13 +141,18 @@ func PreloadRelations(relations []string) func(db *gorm.DB) *gorm.DB {
 
 func WithinTransaction(db *gorm.DB, fn func(tx *gorm.DB) error) error {
 	tx := db.Begin()
+	if tx.Error != nil {
+		return eris.Wrap(tx.Error, "failed to begin transaction")
+	}
 
 	if err := fn(tx); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("transaction failed: %w", err)
 	}
 
-	tx.Commit()
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
 	return nil
 }
@@ -182,14 +190,10 @@ func GetStartOfDay(year int, month int, day int) (time.Time, error) {
 }
 
 func GetEndOfDay(year int, month int, day int) (time.Time, error) {
-	if year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 {
+	t := time.Date(year, time.Month(month), day, 23, 59, 59, 999999999, time.UTC)
+	// time.Date normalizes invalid dates, so check if the date changed
+	if t.Year() != year || int(t.Month()) != month || t.Day() != day {
 		return time.Time{}, eris.Errorf("invalid date: %d-%02d-%02d", year, month, day)
-	}
-
-	endOfDay := fmt.Sprintf("%04d-%02d-%02dT23:59:59Z", year, month, day)
-	t, err := time.Parse(time.RFC3339, endOfDay)
-	if err != nil {
-		return time.Time{}, eris.Wrapf(err, "failed to parse date: %s", endOfDay)
 	}
 
 	return t, nil
