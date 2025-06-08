@@ -12,37 +12,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 	"github.com/itsLeonB/ezutil/internal"
-	"github.com/itsLeonB/ezutil/types"
 	"github.com/rotisserie/eris"
 	"gorm.io/gorm"
 )
 
-// region Types
-
-type QueryOptions struct {
-	Page  int
-	Limit int
-}
-
-const (
-	PathParam  = types.ParamTypePath
-	QueryParam = types.ParamTypeQuery
-
-	BindJSON  = types.BindTypeJSON
-	BindForm  = types.BindTypeForm
-	BindQuery = types.BindTypeQuery
-)
-
-// endregion
-
 // region Gin Utils
 
-func GetParam[T any](ctx *gin.Context, paramType types.ParamType, key string) (T, bool, error) {
+func GetPathParam[T any](ctx *gin.Context, key string) (T, bool, error) {
 	var zero T
 
-	paramValue, exists := internal.GetParamByType(ctx, paramType, key)
+	paramValue, exists := ctx.Params.Get(key)
 	if !exists {
 		return zero, false, nil
 	}
@@ -55,43 +37,11 @@ func GetParam[T any](ctx *gin.Context, paramType types.ParamType, key string) (T
 	return parsedValue, true, nil
 }
 
-func GetPagination(ctx *gin.Context, defaultLimit int) (QueryOptions, error) {
-	page, exists, err := GetParam[int](ctx, QueryParam, "page")
-	if err != nil {
-		return QueryOptions{}, eris.Wrapf(err, "failed to get 'page' parameter")
-	}
-	if !exists || page < 1 {
-		page = 1 // Default page
-	}
-
-	limit, exists, err := GetParam[int](ctx, QueryParam, "limit")
-	if err != nil {
-		return QueryOptions{}, eris.Wrapf(err, "failed to get 'limit' parameter")
-	}
-	if !exists || limit < 1 {
-		if defaultLimit < 1 {
-			return QueryOptions{}, eris.Errorf("invalid default limit: %d", defaultLimit)
-		}
-		limit = defaultLimit // Default limit
-	}
-
-	return QueryOptions{Page: page, Limit: limit}, nil
-}
-
-func BindRequest[T any](ctx *gin.Context, bindType types.BindType) (T, error) {
+func BindRequest[T any](ctx *gin.Context, bindType binding.Binding) (T, error) {
 	var zero T
 
-	switch bindType {
-	case types.BindTypeJSON:
-		if err := ctx.ShouldBindJSON(&zero); err != nil {
-			return zero, err
-		}
-	case types.BindTypeForm:
-		if err := ctx.ShouldBind(&zero); err != nil {
-			return zero, err
-		}
-	default:
-		return zero, eris.Errorf("unsupported bind type: %s", bindType)
+	if err := ctx.ShouldBindWith(&zero, bindType); err != nil {
+		return zero, eris.Wrapf(err, "failed to bind request with type %s", bindType.Name())
 	}
 
 	return zero, nil
@@ -115,6 +65,13 @@ func Paginate(page, limit int) func(db *gorm.DB) *gorm.DB {
 
 func OrderBy(field string, ascending bool) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
+		// Basic validation to prevent SQL injection
+		// Only allow alphanumeric characters, underscores, and dots for table.column
+		if !internal.IsValidFieldName(field) {
+			db.AddError(eris.Errorf("invalid field name: %s", field))
+			return db
+		}
+
 		if ascending {
 			return db.Order(field + " ASC")
 		}
