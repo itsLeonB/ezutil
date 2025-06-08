@@ -68,7 +68,7 @@ func OrderBy(field string, ascending bool) func(db *gorm.DB) *gorm.DB {
 		// Basic validation to prevent SQL injection
 		// Only allow alphanumeric characters, underscores, and dots for table.column
 		if !internal.IsValidFieldName(field) {
-			db.AddError(eris.Errorf("invalid field name: %s", field))
+			_ = db.AddError(eris.Errorf("invalid field name: %s", field))
 			return db
 		}
 
@@ -133,14 +133,10 @@ func MapSlice[T any, U any](input []T, mapperFunc func(T) U) []U {
 // region Time Utils
 
 func GetStartOfDay(year int, month int, day int) (time.Time, error) {
-	if year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 {
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	// time.Date normalizes invalid dates, so check if the date changed
+	if t.Year() != year || int(t.Month()) != month || t.Day() != day {
 		return time.Time{}, eris.Errorf("invalid date: %d-%02d-%02d", year, month, day)
-	}
-
-	startOfDay := fmt.Sprintf("%04d-%02d-%02dT00:00:00Z", year, month, day)
-	t, err := time.Parse(time.RFC3339, startOfDay)
-	if err != nil {
-		return time.Time{}, eris.Wrapf(err, "failed to parse date: %s", startOfDay)
 	}
 
 	return t, nil
