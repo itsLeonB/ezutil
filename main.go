@@ -185,35 +185,32 @@ func ServeGracefully(srv *http.Server, timeout time.Duration) {
 // region String Utils
 
 func Parse[T any](value string) (T, error) {
+	var parsed any
+	var err error
 	var zero T
+	var parsedType string
 
 	switch any(zero).(type) {
 	case string:
 		return any(value).(T), nil
 	case int:
-		parsed, err := strconv.Atoi(value)
-		if err != nil {
-			return zero, err
-		}
-
-		return any(parsed).(T), nil
+		parsed, err = strconv.Atoi(value)
+		parsedType = "int"
 	case bool:
-		parsed, err := strconv.ParseBool(value)
-		if err != nil {
-			return zero, err
-		}
-
-		return any(parsed).(T), nil
+		parsed, err = strconv.ParseBool(value)
+		parsedType = "bool"
 	case uuid.UUID:
-		parsed, err := uuid.Parse(value)
-		if err != nil {
-			return zero, err
-		}
-
-		return any(parsed).(T), nil
+		parsed, err = uuid.Parse(value)
+		parsedType = "uuid"
 	default:
 		return zero, fmt.Errorf("unsupported type: %T", zero)
 	}
+
+	if err != nil {
+		return zero, eris.Wrapf(err, "failed to parse value '%s' as %s", value, parsedType)
+	}
+
+	return parsed.(T), nil
 }
 
 // endregion
