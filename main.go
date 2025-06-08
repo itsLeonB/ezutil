@@ -240,9 +240,19 @@ type Config struct {
 func LoadConfig(defaults Config) *Config {
 	sqlDBConfig := loadSQLDBConfig()
 
+	appDefaults := App{}
+	if defaults.App != nil {
+		appDefaults = *defaults.App
+	}
+
+	authDefaults := Auth{}
+	if defaults.Auth != nil {
+		authDefaults = *defaults.Auth
+	}
+
 	return &Config{
-		App:   loadAppConfig(*defaults.App),
-		Auth:  loadAuthConfig(*defaults.Auth),
+		App:   loadAppConfig(appDefaults),
+		Auth:  loadAuthConfig(authDefaults),
 		SQLDB: sqlDBConfig,
 		GORM:  sqlDBConfig.openGormConnection(),
 	}
@@ -270,14 +280,22 @@ func loadAppConfig(defaults App) *App {
 	if loadedConfig.Port == "" {
 		loadedConfig.Port = defaults.Port
 	}
+	// Validate port number
+	if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
+		log.Fatalf("invalid port number: %s", loadedConfig.Port)
+	}
 	if loadedConfig.Timeout == 0 {
 		loadedConfig.Timeout = defaults.Timeout
 	}
-	if loadedConfig.ClientUrls == nil || len(loadedConfig.ClientUrls) == 0 {
+	if len(loadedConfig.ClientUrls) == 0 {
 		loadedConfig.ClientUrls = defaults.ClientUrls
 	}
 	if loadedConfig.Timezone == "" {
 		loadedConfig.Timezone = defaults.Timezone
+	}
+	// Validate timezone
+	if _, err := time.LoadLocation(loadedConfig.Timezone); err != nil {
+		log.Fatalf("invalid timezone: %s", loadedConfig.Timezone)
 	}
 
 	return &loadedConfig
