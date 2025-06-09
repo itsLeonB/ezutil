@@ -2,6 +2,8 @@ package ezutil
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -177,6 +179,22 @@ func constructAppError(err *gin.Error) (int, error) {
 		log.Println(eris.ToString(err.Err, true))
 		return http.StatusInternalServerError, InternalServerError()
 	}
+}
+
+func GetFromContext[T any](ctx *gin.Context, key string) (T, error) {
+	var zero T
+
+	val, exists := ctx.Get(key)
+	if !exists {
+		return zero, eris.Errorf("value with key %s not found in context", key)
+	}
+
+	asserted, ok := val.(T)
+	if !ok {
+		return zero, eris.Errorf("error asserting value %s as type %T", val, zero)
+	}
+
+	return asserted, nil
 }
 
 // endregion
@@ -435,6 +453,21 @@ func Parse[T any](value string) (T, error) {
 	}
 
 	return parsed.(T), nil
+}
+
+func GenerateRandomString(length int) (string, error) {
+	if length <= 0 {
+		return "", eris.New("length must be greater than 0")
+	}
+
+	randomBytes := make([]byte, length)
+
+	_, err := io.ReadFull(rand.Reader, randomBytes)
+	if err != nil {
+		return "", eris.Wrap(err, "failed to generate random string")
+	}
+
+	return base64.URLEncoding.EncodeToString(randomBytes), nil
 }
 
 // endregion
