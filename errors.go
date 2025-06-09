@@ -5,6 +5,9 @@ import (
 	"net/http"
 )
 
+// AppError represents an application-specific error with HTTP context.
+// It includes Type, Message, HttpStatusCode, and optional Details.
+// AppError implements the error interface by returning a formatted error string.
 type AppError struct {
 	Type           string `json:"type"`
 	Message        string `json:"message"`
@@ -12,10 +15,14 @@ type AppError struct {
 	Details        any    `json:"details,omitempty"`
 }
 
+// Error returns a formatted string representation of the AppError.
+// It implements the error interface by formatting Type, Message, and Details.
 func (ae AppError) Error() string {
 	return fmt.Sprintf("[%s] %s: %s", ae.Type, ae.Message, ae.Details)
 }
 
+// InternalServerError returns an AppError with HTTP 500 status.
+// Use this for unexpected server-side errors that should be logged and investigated.
 func InternalServerError() AppError {
 	return AppError{
 		Type:           "InternalServerError",
@@ -24,6 +31,9 @@ func InternalServerError() AppError {
 	}
 }
 
+// ConflictError returns an AppError with HTTP 409 status.
+// Use this when a request conflicts with the current state of the server,
+// such as attempting to create a duplicate resource.
 func ConflictError(details any) AppError {
 	return AppError{
 		Type:           "ConflictError",
@@ -33,6 +43,8 @@ func ConflictError(details any) AppError {
 	}
 }
 
+// NotFoundError returns an AppError with HTTP 404 status.
+// Use this when a requested resource cannot be found.
 func NotFoundError(details any) AppError {
 	return AppError{
 		Type:           "NotFoundError",
@@ -42,6 +54,8 @@ func NotFoundError(details any) AppError {
 	}
 }
 
+// UnauthorizedError returns an AppError with HTTP 401 status.
+// Use this when authentication is required but missing or invalid.
 func UnauthorizedError(details any) AppError {
 	return AppError{
 		Type:           "UnauthorizedError",
@@ -51,6 +65,8 @@ func UnauthorizedError(details any) AppError {
 	}
 }
 
+// ForbiddenError returns an AppError with HTTP 403 status.
+// Use this when an authenticated user lacks permission for the requested action.
 func ForbiddenError(details any) AppError {
 	return AppError{
 		Type:           "ForbiddenError",
@@ -60,6 +76,8 @@ func ForbiddenError(details any) AppError {
 	}
 }
 
+// BadRequestError returns an AppError with HTTP 400 status.
+// Use this when the client sends a malformed or invalid request.
 func BadRequestError(details any) AppError {
 	return AppError{
 		Type:           "BadRequestError",
@@ -69,6 +87,8 @@ func BadRequestError(details any) AppError {
 	}
 }
 
+// UnprocessableEntityError returns an AppError with HTTP 422 status.
+// Use this when a well-formed request cannot be processed due to semantic errors.
 func UnprocessableEntityError(details any) AppError {
 	return AppError{
 		Type:           "UnprocessableEntityError",
@@ -78,6 +98,8 @@ func UnprocessableEntityError(details any) AppError {
 	}
 }
 
+// ValidationError returns an AppError with HTTP 422 status.
+// Use this for input validation failures, providing details about the invalid fields.
 func ValidationError(details any) AppError {
 	return AppError{
 		Type:           "ValidationError",

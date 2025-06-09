@@ -15,6 +15,10 @@ import (
 	"github.com/rotisserie/eris"
 )
 
+// NewCorsMiddleware creates a CORS middleware for Gin with the provided configuration.
+// If corsConfig is nil, default settings are used (via cors.Default()).
+// The middleware validates the configuration and logs a fatal error if invalid.
+// Returns a Gin HandlerFunc to handle CORS according to the specified config.
 func NewCorsMiddleware(corsConfig *cors.Config) gin.HandlerFunc {
 	if corsConfig == nil {
 		log.Println("CORS configuration is nil, using default settings")
@@ -28,6 +32,11 @@ func NewCorsMiddleware(corsConfig *cors.Config) gin.HandlerFunc {
 	return cors.New(*corsConfig)
 }
 
+// NewAuthMiddleware creates an authentication middleware for Gin.
+// It extracts a token using the given strategy (e.g., "header" or "cookie") via internal.ExtractToken,
+// calls tokenCheckFunc to validate the token and retrieve user data,
+// stores user data in the Gin context, and aborts the request on errors.
+// Returns a Gin HandlerFunc for authentication handling.
 func NewAuthMiddleware(
 	authStrategy string,
 	tokenCheckFunc func(ctx *gin.Context, token string) (bool, map[string]any, error),
@@ -65,6 +74,11 @@ func NewAuthMiddleware(
 	}
 }
 
+// NewPermissionMiddleware creates a permission-checking middleware for Gin.
+// It retrieves the user role from context using the provided roleContextKey,
+// checks if the role exists in permissionMap and includes the requiredPermission,
+// and aborts the request with a ForbiddenError if permission is missing.
+// Returns a Gin HandlerFunc for permission enforcement.
 func NewPermissionMiddleware(
 	roleContextKey string,
 	requiredPermission string,
@@ -95,6 +109,10 @@ func NewPermissionMiddleware(
 	}
 }
 
+// NewErrorMiddleware creates an error handling middleware for Gin.
+// It should be registered last and captures errors from previous handlers,
+// converts them into AppError or validation errors, and sends a structured JSON response
+// with the appropriate HTTP status code. Returns a Gin HandlerFunc.
 func NewErrorMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
