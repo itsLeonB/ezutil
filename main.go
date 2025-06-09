@@ -2,18 +2,26 @@ package ezutil
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/itsLeonB/ezutil/config"
 	"github.com/itsLeonB/ezutil/internal"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rotisserie/eris"
@@ -48,6 +56,144 @@ func BindRequest[T any](ctx *gin.Context, bindType binding.Binding) (T, error) {
 	}
 
 	return zero, nil
+}
+
+func NewCorsMiddleware(corsConfig *cors.Config) gin.HandlerFunc {
+	if corsConfig == nil {
+		log.Println("CORS configuration is nil, using default settings")
+		return cors.Default()
+	}
+
+	if err := corsConfig.Validate(); err != nil {
+		log.Fatalf("invalid CORS configuration: %s", err.Error())
+	}
+
+	return cors.New(*corsConfig)
+}
+
+func NewAuthMiddleware(
+	authStrategy string,
+	tokenCheckFunc func(ctx *gin.Context, token string) (bool, map[string]any, error),
+) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token, errMsg, err := internal.ExtractToken(ctx, authStrategy)
+		if err != nil {
+			_ = ctx.Error(eris.Wrap(err, "error extracting token"))
+			ctx.Abort()
+			return
+		}
+		if errMsg != "" {
+			_ = ctx.Error(UnauthorizedError(errMsg))
+			ctx.Abort()
+			return
+		}
+
+		exists, data, err := tokenCheckFunc(ctx, token)
+		if err != nil {
+			_ = ctx.Error(err)
+			ctx.Abort()
+			return
+		}
+		if !exists {
+			_ = ctx.Error(UnauthorizedError(config.MsgAuthUserNotFound))
+			ctx.Abort()
+			return
+		}
+
+		for key, val := range data {
+			ctx.Set(key, val)
+		}
+
+		ctx.Next()
+	}
+}
+
+func NewPermissionMiddleware(
+	roleContextKey string,
+	requiredPermission string,
+	permissionMap map[string][]string,
+) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role := ctx.GetString(roleContextKey)
+		if role == "" {
+			_ = ctx.Error(eris.Errorf("role not found in context or invalid type"))
+			ctx.Abort()
+			return
+		}
+
+		permissions, ok := permissionMap[role]
+		if !ok {
+			_ = ctx.Error(eris.Errorf("unknown role: %s", role))
+			ctx.Abort()
+			return
+		}
+
+		if !slices.Contains(permissions, requiredPermission) {
+			_ = ctx.Error(ForbiddenError(config.MsgNoPermission))
+			ctx.Abort()
+			return
+		}
+
+		ctx.Next()
+	}
+}
+
+func NewErrorMiddleware(
+	errorResponseConstructor func(err error) any,
+) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.Next()
+
+		if err := ctx.Errors.Last(); err != nil {
+			if originalErr, ok := err.Err.(AppError); ok {
+				ctx.AbortWithStatusJSON(originalErr.HttpStatusCode, errorResponseConstructor(originalErr))
+				return
+			}
+
+			statusCode, appError := constructAppError(err)
+			ctx.AbortWithStatusJSON(statusCode, errorResponseConstructor(appError))
+		}
+	}
+}
+
+func constructAppError(err *gin.Error) (int, error) {
+	originalErr := eris.Unwrap(err.Err)
+	switch originalErr := originalErr.(type) {
+	case validator.ValidationErrors:
+		var errors []string
+		for _, e := range originalErr {
+			errors = append(errors, e.Error())
+		}
+
+		return http.StatusUnprocessableEntity, ValidationError(errors)
+	case *json.SyntaxError:
+		return http.StatusBadRequest, BadRequestError(config.MsgInvalidJson)
+	default:
+		// EOF error from json package is unexported
+		if originalErr == io.EOF || originalErr.Error() == "EOF" {
+			return http.StatusBadRequest, BadRequestError(config.MsgMissingBody)
+		}
+
+		log.Printf("unhandled error of type: %T\n", originalErr)
+		log.Println(eris.ToString(err.Err, true))
+		return http.StatusInternalServerError, InternalServerError()
+	}
+}
+
+func GetFromContext[T any](ctx *gin.Context, key string) (T, error) {
+	var zero T
+
+	val, exists := ctx.Get(key)
+	if !exists {
+		return zero, eris.Errorf("value with key %s not found in context", key)
+	}
+
+	asserted, ok := val.(T)
+	if !ok {
+		return zero, eris.Errorf("error asserting value %s as type %T", val, zero)
+	}
+
+	return asserted, nil
 }
 
 // endregion
@@ -169,6 +315,88 @@ func GetEndOfDay(year int, month int, day int) (time.Time, error) {
 
 // region HTTP Utils
 
+type AppError struct {
+	Type           string `json:"type"`
+	Message        string `json:"message"`
+	HttpStatusCode int    `json:"-"`
+	Details        any    `json:"details,omitempty"`
+}
+
+func (ae AppError) Error() string {
+	return fmt.Sprintf("[%s] %s: %s", ae.Type, ae.Message, ae.Details)
+}
+
+func InternalServerError() AppError {
+	return AppError{
+		Type:           "InternalServerError",
+		Message:        "Undefined error occurred",
+		HttpStatusCode: http.StatusInternalServerError,
+	}
+}
+
+func ConflictError(details any) AppError {
+	return AppError{
+		Type:           "ConflictError",
+		Message:        "Conflict with existing resource",
+		HttpStatusCode: http.StatusConflict,
+		Details:        details,
+	}
+}
+
+func NotFoundError(details any) AppError {
+	return AppError{
+		Type:           "NotFoundError",
+		Message:        "Requested resource is not found",
+		HttpStatusCode: http.StatusNotFound,
+		Details:        details,
+	}
+}
+
+func UnauthorizedError(details any) AppError {
+	return AppError{
+		Type:           "UnauthorizedError",
+		Message:        "Unauthorized access",
+		HttpStatusCode: http.StatusUnauthorized,
+		Details:        details,
+	}
+}
+
+func ForbiddenError(details any) AppError {
+	return AppError{
+		Type:           "ForbiddenError",
+		Message:        "Forbidden access",
+		HttpStatusCode: http.StatusForbidden,
+		Details:        details,
+	}
+}
+
+func BadRequestError(details any) AppError {
+	return AppError{
+		Type:           "BadRequestError",
+		Message:        "Request is not valid",
+		HttpStatusCode: http.StatusBadRequest,
+		Details:        details,
+	}
+}
+
+func UnprocessableEntityError(details any) AppError {
+	return AppError{
+		Type:           "UnprocessableEntityError",
+		Message:        "Request cannot be processed due to semantic errors",
+		HttpStatusCode: http.StatusUnprocessableEntity,
+		Details:        details,
+	}
+}
+
+func ValidationError(details any) AppError {
+	return AppError{
+		Type:           "ValidationError",
+		Message:        "Failed to validate request",
+		HttpStatusCode: http.StatusUnprocessableEntity,
+		Details:        details,
+	}
+}
+
 func ServeGracefully(srv *http.Server, timeout time.Duration) {
 	go func() {
 		err := srv.ListenAndServe()
@@ -224,6 +452,21 @@ func Parse[T any](value string) (T, error) {
 	}
 
 	return parsed.(T), nil
+}
+
+func GenerateRandomString(length int) (string, error) {
+	if length <= 0 {
+		return "", eris.New("length must be greater than 0")
+	}
+
+	randomBytes := make([]byte, length)
+
+	_, err := io.ReadFull(rand.Reader, randomBytes)
+	if err != nil {
+		return "", eris.Wrap(err, "failed to generate random string")
+	}
+
+	return base64.URLEncoding.EncodeToString(randomBytes), nil
 }
 
 // endregion
