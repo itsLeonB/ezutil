@@ -37,7 +37,7 @@ func NewResponse(message string) JSONResponse {
 	}
 }
 
-func NewErrorResponse(err error) any {
+func NewErrorResponse(err error) JSONResponse {
 	return JSONResponse{
 		Message: err.Error(),
 		Errors:  err,
