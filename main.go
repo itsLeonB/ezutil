@@ -228,7 +228,7 @@ func SetupRoutes(router *gin.Engine, routeConfigs []RouteConfig) {
 	for _, routeConfig := range routeConfigs {
 		routeGroup := router.Group(routeConfig.Group, routeConfig.Handlers...)
 		for _, versionConfig := range routeConfig.Versions {
-			versionGroup := routeGroup.Group(fmt.Sprintf("/v%d", versionConfig.Version, versionConfig.Handlers))
+			versionGroup := routeGroup.Group(fmt.Sprintf("/v%d", versionConfig.Version), versionConfig.Handlers...)
 			for _, routeGroupConfig := range versionConfig.Groups {
 				group := versionGroup.Group(routeGroupConfig.Group, routeGroupConfig.Handlers...)
 				for _, endpointConfig := range routeGroupConfig.Endpoints {
