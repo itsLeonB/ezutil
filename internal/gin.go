@@ -25,7 +25,7 @@ func extractBearerToken(ctx *gin.Context) (string, string) {
 		return "", config.MsgAuthMissingToken
 	}
 
-	isValid, token := isValidBearerToken(token)
+	isValid, token := validateAndExtractBearerToken(token)
 	if !isValid {
 		return "", config.MsgAuthInvalidToken
 	}
@@ -33,7 +33,7 @@ func extractBearerToken(ctx *gin.Context) (string, string) {
 	return token, ""
 }
 
-func isValidBearerToken(bearerToken string) (bool, string) {
+func validateAndExtractBearerToken(bearerToken string) (bool, string) {
 	splits := strings.Split(bearerToken, " ")
 
 	if len(splits) != 2 {
