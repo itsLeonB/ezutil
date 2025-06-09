@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -111,7 +112,13 @@ func NewPermissionMiddleware(
 	permissionMap map[string][]string,
 ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		role := ctx.Value(roleContextKey).(string)
+		roleValue := ctx.Value(roleContextKey)
+		role, ok := roleValue.(string)
+		if !ok {
+			_ = ctx.Error(eris.Errorf("role not found in context or invalid type"))
+			ctx.Abort()
+			return
+		}
 
 		permissions, ok := permissionMap[role]
 		if !ok {
@@ -162,7 +169,7 @@ func constructAppError(err *gin.Error) (int, error) {
 		return http.StatusBadRequest, BadRequestError(config.MsgInvalidJson)
 	default:
 		// EOF error from json package is unexported
-		if originalErr.Error() == "EOF" {
+		if originalErr == io.EOF || originalErr.Error() == "EOF" {
 			return http.StatusBadRequest, BadRequestError(config.MsgMissingBody)
 		}
 
@@ -366,9 +373,10 @@ func UnprocessableEntityError(details any) AppError {
 
 func ValidationError(details any) AppError {
 	return AppError{
-		Type:    "ValidationError",
-		Message: "Failed to validate request",
-		Details: details,
+		Type:           "ValidationError",
+		Message:        "Failed to validate request",
+		HttpStatusCode: http.StatusUnprocessableEntity,
+		Details:        details,
 	}
 }
 
