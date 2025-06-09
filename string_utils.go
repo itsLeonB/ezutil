@@ -11,6 +11,9 @@ import (
 	"github.com/rotisserie/eris"
 )
 
+// Parse converts a string value to the specified type T.
+// Supported types include string, int, bool, and uuid.UUID.
+// Returns an error if parsing fails or the type is unsupported.
 func Parse[T any](value string) (T, error) {
 	var parsed any
 	var err error
@@ -36,6 +39,9 @@ func Parse[T any](value string) (T, error) {
 	return parsed.(T), nil
 }
 
+// GenerateRandomString creates a cryptographically secure random string of the specified length.
+// The string is base64-encoded using URL-safe encoding without padding.
+// Returns an error if length is non-positive or random generation fails.
 func GenerateRandomString(length int) (string, error) {
 	if length <= 0 {
 		return "", eris.New("length must be greater than 0")

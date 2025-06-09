@@ -12,6 +12,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// Config represents the complete application configuration loaded from environment variables.
+// It aggregates all configuration sections including app settings, authentication, database parameters,
+// and the initialized GORM DB instance.
 type Config struct {
 	App   *App
 	Auth  *Auth
@@ -19,6 +22,8 @@ type Config struct {
 	GORM  *gorm.DB
 }
 
+// LoadConfig reads environment variables into the default Config, loads sub-configuration
+// for App, Auth, and SQLDB, establishes a GORM connection, and returns the fully initialized Config.
 func LoadConfig(defaults Config) *Config {
 	sqlDBConfig := loadSQLDBConfig()
 
@@ -40,6 +45,8 @@ func LoadConfig(defaults Config) *Config {
 	}
 }
 
+// App holds application-level settings such as environment name, server port, request timeout,
+// allowed client URLs, and timezone. These values are populated from environment variables.
 type App struct {
 	Env        string
 	Port       string
@@ -83,6 +90,8 @@ func loadAppConfig(defaults App) *App {
 	return &loadedConfig
 }
 
+// Auth holds authentication configuration including JWT secret key, token and cookie durations,
+// issuer identifier, and authentication service URL. Values are sourced from environment variables.
 type Auth struct {
 	SecretKey      string
 	TokenDuration  time.Duration
@@ -118,6 +127,8 @@ func loadAuthConfig(defaults Auth) *Auth {
 	return &loadedConfig
 }
 
+// SQLDB holds SQL database connection parameters loaded from environment variables,
+// including host, user credentials, database name, port, and driver type for GORM.
 type SQLDB struct {
 	Host     string `required:"true"`
 	User     string `required:"true"`
