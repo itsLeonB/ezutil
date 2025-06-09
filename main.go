@@ -114,9 +114,8 @@ func NewPermissionMiddleware(
 	permissionMap map[string][]string,
 ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		roleValue := ctx.Value(roleContextKey)
-		role, ok := roleValue.(string)
-		if !ok {
+		role := ctx.GetString(roleContextKey)
+		if role == "" {
 			_ = ctx.Error(eris.Errorf("role not found in context or invalid type"))
 			ctx.Abort()
 			return

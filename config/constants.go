@@ -1,7 +1,9 @@
 package config
 
+type txKey string
+
 const (
-	ContextKeyGormTx = "ezutil.gormTx"
+	ContextKeyGormTx txKey = "ezutil.gormTx"
 
 	MsgTransactionError = "error processing transaction"
 	MsgNoPermission     = "user does not have permission to perform this action"
