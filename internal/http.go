@@ -11,7 +11,12 @@ import (
 )
 
 func ServeGracefully(srv *http.Server, timeout time.Duration) {
+	if timeout < 0 {
+		log.Fatal("timeout must be > 0")
+	}
+
 	go func() {
+		log.Printf("starting server on: %s\n", srv.Addr)
 		err := srv.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatalf("error server listen and serve: %s", err.Error())

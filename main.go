@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"slices"
 	"strconv"
@@ -484,7 +485,7 @@ func (jr JSONResponse) WithError(err error) JSONResponse {
 }
 
 func (jr JSONResponse) WithPagination(queryOptions QueryOptions, totalData int) JSONResponse {
-	totalPages := int((totalData + queryOptions.Limit - 1) / queryOptions.Limit)
+	totalPages := int(math.Ceil(float64(totalData) / float64(queryOptions.Limit)))
 
 	jr.Pagination = Pagination{
 		TotalData:   totalData,
