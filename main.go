@@ -8,12 +8,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
-	"os"
-	"os/signal"
 	"slices"
 	"strconv"
-	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -138,20 +136,18 @@ func NewPermissionMiddleware(
 	}
 }
 
-func NewErrorMiddleware(
-	errorResponseConstructor func(err error) any,
-) gin.HandlerFunc {
+func NewErrorMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.Next()
 
 		if err := ctx.Errors.Last(); err != nil {
 			if originalErr, ok := err.Err.(AppError); ok {
-				ctx.AbortWithStatusJSON(originalErr.HttpStatusCode, errorResponseConstructor(originalErr))
+				ctx.AbortWithStatusJSON(originalErr.HttpStatusCode, NewErrorResponse(originalErr))
 				return
 			}
 
 			statusCode, appError := constructAppError(err)
-			ctx.AbortWithStatusJSON(statusCode, errorResponseConstructor(appError))
+			ctx.AbortWithStatusJSON(statusCode, NewErrorResponse(appError))
 		}
 	}
 }
@@ -194,6 +190,50 @@ func GetFromContext[T any](ctx *gin.Context, key string) (T, error) {
 	}
 
 	return asserted, nil
+}
+
+type RouteConfig struct {
+	Group    string
+	Versions []RouteVersionConfig
+	Handlers []gin.HandlerFunc
+}
+
+type RouteVersionConfig struct {
+	Version  int
+	Groups   []RouteGroupConfig
+	Handlers []gin.HandlerFunc
+}
+
+type RouteGroupConfig struct {
+	Group     string
+	Endpoints []EndpointConfig
+	Handlers  []gin.HandlerFunc
+}
+
+type EndpointConfig struct {
+	Method   string
+	Endpoint string
+	Handlers []gin.HandlerFunc
+}
+
+func SetupRoutes(router *gin.Engine, routeConfigs []RouteConfig) {
+	if router == nil {
+		log.Fatal("Router cannot be nil")
+	}
+
+	for _, routeConfig := range routeConfigs {
+		routeGroup := router.Group(routeConfig.Group, routeConfig.Handlers...)
+		for _, versionConfig := range routeConfig.Versions {
+			versionGroup := routeGroup.Group(fmt.Sprintf("/v%d", versionConfig.Version), versionConfig.Handlers...)
+			for _, routeGroupConfig := range versionConfig.Groups {
+				group := versionGroup.Group(routeGroupConfig.Group, routeGroupConfig.Handlers...)
+				for _, endpointConfig := range routeGroupConfig.Endpoints {
+					group.Handle(endpointConfig.Method, endpointConfig.Endpoint, endpointConfig.Handlers...)
+				}
+			}
+
+		}
+	}
 }
 
 // endregion
@@ -397,28 +437,71 @@ func ValidationError(details any) AppError {
 	}
 }
 
-func ServeGracefully(srv *http.Server, timeout time.Duration) {
-	go func() {
-		err := srv.ListenAndServe()
-		if err != nil && err != http.ErrServerClosed {
-			log.Fatalf("error server listen and serve: %s", err.Error())
-		}
-	}()
+type QueryOptions struct {
+	Page  int `query:"page" binding:"required,min=1"`
+	Limit int `query:"limit" binding:"required,min=1"`
+}
 
-	exit := make(chan os.Signal, 1)
-	signal.Notify(exit, os.Interrupt, syscall.SIGTERM)
-	<-exit
-	log.Println("shutting down server...")
+type Pagination struct {
+	TotalData   int  `json:"totalData"`
+	CurrentPage int  `json:"currentPage"`
+	TotalPages  int  `json:"totalPages"`
+	HasNextPage bool `json:"hasNextPage"`
+	HasPrevPage bool `json:"hasPrevPage"`
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+func (p *Pagination) IsZero() bool {
+	return p.TotalData == 0 && p.CurrentPage == 0 && p.TotalPages == 0 && !p.HasNextPage && !p.HasPrevPage
+}
 
-	err := srv.Shutdown(ctx)
-	if err != nil {
-		log.Fatalf("error shutting down: %s", err.Error())
+type JSONResponse struct {
+	Message    string     `json:"message"`
+	Data       any        `json:"data,omitzero"`
+	Errors     error      `json:"errors,omitempty"`
+	Pagination Pagination `json:"pagination,omitzero"`
+}
+
+func NewResponse(message string) JSONResponse {
+	return JSONResponse{
+		Message: message,
+	}
+}
+
+func NewErrorResponse(err error) any {
+	return JSONResponse{
+		Message: err.Error(),
+		Errors:  err,
+	}
+}
+
+func (jr JSONResponse) WithData(data any) JSONResponse {
+	jr.Data = data
+	return jr
+}
+
+func (jr JSONResponse) WithError(err error) JSONResponse {
+	jr.Errors = err
+	return jr
+}
+
+func (jr JSONResponse) WithPagination(queryOptions QueryOptions, totalData int) JSONResponse {
+	totalPages := int(math.Ceil(float64(totalData) / float64(queryOptions.Limit)))
+
+	jr.Pagination = Pagination{
+		TotalData:   totalData,
+		CurrentPage: queryOptions.Page,
+		TotalPages:  totalPages,
+		HasNextPage: queryOptions.Page < totalPages,
+		HasPrevPage: queryOptions.Page > 1,
 	}
 
-	log.Println("server successfully shutdown")
+	return jr
+}
+
+func RunServer(defaultConfigs Config, serverSetupFunc func(*Config) *http.Server) {
+	configs := LoadConfig(defaultConfigs)
+	srv := serverSetupFunc(configs)
+	internal.ServeGracefully(srv, configs.App.Timeout)
 }
 
 // endregion
