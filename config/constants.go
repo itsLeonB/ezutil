@@ -12,4 +12,5 @@ const (
 	MsgAuthUserNotFound = "user is not found"
 	MsgInvalidJson      = "JSON is invalid or malformed"
 	MsgMissingBody      = "request body is missing or empty"
+	MsgAuthExpiredToken = "token is expired, please login again"
 )
