@@ -41,6 +41,10 @@ func NewAuthMiddleware(
 	authStrategy string,
 	tokenCheckFunc func(ctx *gin.Context, token string) (bool, map[string]any, error),
 ) gin.HandlerFunc {
+	if tokenCheckFunc == nil {
+		log.Fatalf("tokenCheckFunc cannot be nil")
+	}
+
 	return func(ctx *gin.Context) {
 		token, errMsg, err := internal.ExtractToken(ctx, authStrategy)
 		if err != nil {

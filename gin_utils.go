@@ -68,7 +68,7 @@ func GetFromContext[T any](ctx *gin.Context, key string) (T, error) {
 
 	asserted, ok := val.(T)
 	if !ok {
-		return zero, eris.Errorf("error asserting value %s as type %T", val, zero)
+		return zero, eris.Errorf("error asserting value %v as type %T", val, zero)
 	}
 
 	return asserted, nil

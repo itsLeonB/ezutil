@@ -85,5 +85,8 @@ type HashService interface {
 }
 
 func NewHashService(cost int) HashService {
+	if cost < 0 {
+		cost = 10 // TODO: make this configurable
+	}
 	return &internal.HashServiceBcrypt{Cost: cost}
 }

@@ -73,7 +73,10 @@ func loadAppConfig(defaults App) *App {
 	if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
 		log.Fatalf("invalid port number: %s", loadedConfig.Port)
 	}
-	if loadedConfig.Timeout == 0 {
+	if loadedConfig.Timeout <= 0 {
+		if loadedConfig.Timeout < 0 {
+			log.Println("timeout cannot be negative, using default value...")
+		}
 		loadedConfig.Timeout = defaults.Timeout
 	}
 	if len(loadedConfig.ClientUrls) == 0 {
@@ -111,10 +114,16 @@ func loadAuthConfig(defaults Auth) *Auth {
 	if loadedConfig.SecretKey == "" {
 		loadedConfig.SecretKey = defaults.SecretKey
 	}
-	if loadedConfig.TokenDuration == 0 {
+	if loadedConfig.TokenDuration <= 0 {
+		if loadedConfig.TokenDuration < 0 {
+			log.Println("token duration cannot be negative, using default value...")
+		}
 		loadedConfig.TokenDuration = defaults.TokenDuration
 	}
-	if loadedConfig.CookieDuration == 0 {
+	if loadedConfig.CookieDuration <= 0 {
+		if loadedConfig.CookieDuration < 0 {
+			log.Println("cookie duration cannot be negative, using default value...")
+		}
 		loadedConfig.CookieDuration = defaults.CookieDuration
 	}
 	if loadedConfig.Issuer == "" {
@@ -144,6 +153,10 @@ func loadSQLDBConfig() *SQLDB {
 	err := envconfig.Process("SQLDB", &loadedConfig)
 	if err != nil {
 		log.Fatalf("error loading SQLDB config: %s", err.Error())
+	}
+
+	if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
+		log.Fatalf("invalid database port number: %s", loadedConfig.Port)
 	}
 
 	return &loadedConfig
