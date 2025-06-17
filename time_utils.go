@@ -25,3 +25,11 @@ func GetEndOfDay(year int, month int, day int) (time.Time, error) {
 
 	return t, nil
 }
+
+func FormatTimeNullable(t time.Time, layout string) string {
+	if t.IsZero() {
+		return ""
+	}
+
+	return t.Format(layout)
+}

@@ -12,3 +12,18 @@ func MapSlice[T any, U any](input []T, mapperFunc func(T) U) []U {
 
 	return output
 }
+
+func MapSliceWithError[T any, U any](input []T, mapperFunc func(T) (U, error)) ([]U, error) {
+	output := make([]U, len(input))
+
+	for i, v := range input {
+		mapped, err := mapperFunc(v)
+		if err != nil {
+			return nil, err
+		}
+
+		output[i] = mapped
+	}
+
+	return output, nil
+}

@@ -1,6 +1,8 @@
 package ezutil
 
 import (
+	"time"
+
 	"github.com/itsLeonB/ezutil/internal"
 	"github.com/rotisserie/eris"
 	"gorm.io/gorm"
@@ -58,5 +60,12 @@ func PreloadRelations(relations []string) func(db *gorm.DB) *gorm.DB {
 		}
 
 		return db
+	}
+}
+
+func BetweenTime(col string, start, end time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		query, _ := GetTimeRangeClause(col, start, end)
+		return db.Where(query)
 	}
 }

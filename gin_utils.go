@@ -26,6 +26,22 @@ func GetPathParam[T any](ctx *gin.Context, key string) (T, bool, error) {
 	return parsedValue, true, nil
 }
 
+func GetRequiredPathParam[T any](ctx *gin.Context, key string) (T, error) {
+	var zero T
+
+	paramValue, exists := ctx.Params.Get(key)
+	if !exists {
+		return zero, eris.Errorf("missing path param: %s", key)
+	}
+
+	parsedValue, err := Parse[T](paramValue)
+	if err != nil {
+		return zero, eris.Wrapf(err, "failed to parse parameter '%s'", key)
+	}
+
+	return parsedValue, nil
+}
+
 // BindRequest binds the incoming HTTP request to a struct of type T using the specified binding type.
 // It supports various Gin binding types such as JSON, XML, Query, etc.
 // Returns the bound struct or an error if binding fails.
@@ -56,4 +72,15 @@ func GetFromContext[T any](ctx *gin.Context, key string) (T, error) {
 	}
 
 	return asserted, nil
+}
+
+func GetAndParseFromContext[T any](ctx *gin.Context, key string) (T, error) {
+	var zero T
+
+	asserted, err := GetFromContext[string](ctx, key)
+	if err != nil {
+		return zero, err
+	}
+
+	return Parse[T](asserted)
 }
