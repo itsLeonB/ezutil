@@ -82,10 +82,10 @@ func loadAppConfig(defaults App) *App {
 	if loadedConfig.Timezone == "" {
 		loadedConfig.Timezone = defaults.Timezone
 	}
-	// Validate timezone
-	if _, err := time.LoadLocation(loadedConfig.Timezone); err != nil {
-		log.Fatalf("invalid timezone: %s", loadedConfig.Timezone)
-	}
+	// Validate timezone: TODO
+	// if _, err := time.LoadLocation(loadedConfig.Timezone); err != nil {
+	// 	log.Fatalf("invalid timezone: %s", loadedConfig.Timezone)
+	// }
 
 	return &loadedConfig
 }
