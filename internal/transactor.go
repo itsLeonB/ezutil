@@ -37,7 +37,7 @@ func (t *GormTransactor) Commit(ctx context.Context) error {
 	return nil
 }
 
-func (r *GormTransactor) Rollback(ctx context.Context) {
+func (t *GormTransactor) Rollback(ctx context.Context) {
 	tx, err := GetTxFromContext(ctx)
 	if err != nil {
 		log.Println("rollback error:", err)
@@ -57,6 +57,20 @@ func (r *GormTransactor) Rollback(ctx context.Context) {
 		log.Printf("error: %T", err)
 		log.Println("rollback error:", err)
 	}
+}
+
+func (t *GormTransactor) WithinTransaction(ctx context.Context, serviceFn func(ctx context.Context) error) error {
+	ctx, err := t.Begin(ctx)
+	if err != nil {
+		return eris.Wrap(err, "error starting transaction")
+	}
+	defer t.Rollback(ctx)
+
+	if err := serviceFn(ctx); err != nil {
+		return err
+	}
+
+	return t.Commit(ctx)
 }
 
 func GetTxFromContext(ctx context.Context) (*gorm.DB, error) {

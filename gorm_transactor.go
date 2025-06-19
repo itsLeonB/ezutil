@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/itsLeonB/ezutil/internal"
-	"github.com/rotisserie/eris"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +16,8 @@ type Transactor interface {
 	Commit(ctx context.Context) error
 	// Rollback rolls back the current transaction in the context without returning an error.
 	Rollback(ctx context.Context)
+	// WithinTransaction executes a service function within a database transaction.
+	WithinTransaction(ctx context.Context, serviceFn func(ctx context.Context) error) error
 }
 
 // NewTransactor creates a new Transactor implementation using GORM.
@@ -29,22 +30,4 @@ func NewTransactor(db *gorm.DB) Transactor {
 // Returns an error if no transaction is found or if the stored value is not a *gorm.DB.
 func GetTxFromContext(ctx context.Context) (*gorm.DB, error) {
 	return internal.GetTxFromContext(ctx)
-}
-
-// WithinTransaction executes a service function within a database transaction.
-// It begins a transaction, executes serviceFn with the transactional context,
-// and commits if successful or rolls back if an error occurs.
-// serviceFn should use GetTxFromContext to access the transaction.
-func WithinTransaction(ctx context.Context, transactor Transactor, serviceFn func(ctx context.Context) error) error {
-	ctx, err := transactor.Begin(ctx)
-	if err != nil {
-		return eris.Wrap(err, "error starting transaction")
-	}
-	defer transactor.Rollback(ctx)
-
-	if err := serviceFn(ctx); err != nil {
-		return eris.Wrap(err, "error executing service function")
-	}
-
-	return transactor.Commit(ctx)
 }
