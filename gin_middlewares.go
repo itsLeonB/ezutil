@@ -146,12 +146,14 @@ func constructAppError(err *gin.Error) (int, error) {
 	case *json.SyntaxError:
 		return http.StatusBadRequest, BadRequestError(config.MsgInvalidJson)
 	default:
-		// EOF error from json package is unexported
-		if originalErr == io.EOF || originalErr.Error() == "EOF" {
-			return http.StatusBadRequest, BadRequestError(config.MsgMissingBody)
+		if originalErr != nil {
+			// EOF error from json package is unexported
+			if originalErr == io.EOF || originalErr.Error() == "EOF" {
+				return http.StatusBadRequest, BadRequestError(config.MsgMissingBody)
+			}
+			log.Printf("unhandled error of type: %T\n", originalErr)
 		}
 
-		log.Printf("unhandled error of type: %T\n", originalErr)
 		log.Println(eris.ToString(err.Err, true))
 		return http.StatusInternalServerError, InternalServerError()
 	}
