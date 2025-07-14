@@ -8,22 +8,36 @@ import (
 	"gorm.io/gorm"
 )
 
+// CRUDRepository defines a generic interface for basic CRUD operations on entities of type T.
+// It provides standard database operations with context support and transaction awareness.
+// The interface abstracts the underlying database implementation for easier testing and flexibility.
 type CRUDRepository[T any] interface {
+	// Insert creates a new record in the database.
 	Insert(ctx context.Context, model T) (T, error)
+	// FindAll retrieves multiple records based on the specification.
 	FindAll(ctx context.Context, spec Specification[T]) ([]T, error)
+	// FindFirst retrieves the first record matching the specification.
 	FindFirst(ctx context.Context, spec Specification[T]) (T, error)
+	// Update modifies an existing record in the database.
 	Update(ctx context.Context, model T) (T, error)
+	// Delete removes a record from the database (hard delete).
 	Delete(ctx context.Context, model T) error
+	// BatchInsert creates multiple records in a single database operation.
 	BatchInsert(ctx context.Context, models []T) ([]T, error)
+	// GetGormInstance returns the appropriate GORM DB instance (transaction-aware).
 	GetGormInstance(ctx context.Context) (*gorm.DB, error)
 }
 
+// Specification defines query parameters for database operations.
+// It includes the model for WHERE conditions, relations to preload, and locking options.
 type Specification[T any] struct {
-	Model            T
-	PreloadRelations []string
-	ForUpdate        bool
+	Model            T        // Model with fields set for WHERE conditions
+	PreloadRelations []string // Relations to eager load
+	ForUpdate        bool     // Whether to use SELECT ... FOR UPDATE
 }
 
+// NewCRUDRepository creates a new CRUD repository implementation using GORM.
+// The repository provides transaction-aware database operations for the specified entity type T.
 func NewCRUDRepository[T any](db *gorm.DB) CRUDRepository[T] {
 	return &crudRepositoryGorm[T]{db}
 }

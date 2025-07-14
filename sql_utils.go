@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// GetTimeRangeClause generates a SQL WHERE clause for time range filtering.
+// It handles various combinations of start and end times, including open-ended ranges.
+// Returns the SQL clause string and corresponding parameter values for prepared statements.
 func GetTimeRangeClause(timeCol string, start, end time.Time) (string, []any) {
 	if start.IsZero() && end.IsZero() {
 		return "", nil

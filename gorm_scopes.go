@@ -64,6 +64,9 @@ func PreloadRelations(relations []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// BetweenTime returns a GORM scope that filters records between two time values.
+// It uses GetTimeRangeClause to generate the appropriate SQL WHERE clause.
+// Handles open-ended ranges when either start or end time is zero.
 func BetweenTime(col string, start, end time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		query, _ := GetTimeRangeClause(col, start, end)
@@ -71,12 +74,18 @@ func BetweenTime(col string, start, end time.Time) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+// DefaultOrder returns a GORM scope that applies default ordering by created_at DESC.
+// This provides consistent ordering for queries that don't specify explicit ordering.
+// Assumes the model has a created_at field.
 func DefaultOrder() func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Order("created_at DESC")
 	}
 }
 
+// ForUpdate returns a GORM scope that conditionally adds FOR UPDATE locking to queries.
+// When enable is true, it adds SELECT ... FOR UPDATE to prevent concurrent modifications.
+// Used for pessimistic locking in transaction-critical operations.
 func ForUpdate(enable bool) func(*gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if enable {
