@@ -69,8 +69,11 @@ func PreloadRelations(relations []string) func(db *gorm.DB) *gorm.DB {
 // Handles open-ended ranges when either start or end time is zero.
 func BetweenTime(col string, start, end time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		query, _ := GetTimeRangeClause(col, start, end)
-		return db.Where(query)
+		query, args := GetTimeRangeClause(col, start, end)
+		if query == "" {
+			return db
+		}
+		return db.Where(query, args...)
 	}
 }
 

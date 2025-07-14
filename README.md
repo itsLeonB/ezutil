@@ -190,6 +190,42 @@ ezutil/
 └── go.mod                # Go module definition
 ```
 
+## Testing
+
+EZUtil includes a comprehensive test suite covering all exported functions and methods. The tests are located in the `test/` directory and use the `ezutil_test` package.
+
+### Running Tests
+
+Use the provided Makefile commands to run tests:
+
+```bash
+# Show all available commands
+make help
+
+# Run all tests (quick)
+make test
+
+# Run tests with verbose output
+make test-verbose
+
+# Run tests with coverage report
+make test-coverage
+
+# Clean test cache and run tests
+make test-clean
+```
+
+### Test Coverage
+
+The test suite provides comprehensive coverage including:
+- ✅ All exported functions and methods
+- ✅ Happy path scenarios and error conditions
+- ✅ Edge cases and input validation
+- ✅ Database operations (using in-memory SQLite)
+- ✅ HTTP request/response handling
+- ✅ JWT token operations
+- ✅ Configuration loading and validation
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
