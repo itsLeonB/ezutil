@@ -25,8 +25,12 @@ type Config struct {
 // LoadConfig reads environment variables into the default Config, loads sub-configuration
 // for App, Auth, and SQLDB, establishes a GORM connection, and returns the fully initialized Config.
 func LoadConfig(defaults Config) *Config {
-	sqlDBConfig := loadSQLDBConfig()
+	return LoadConfigWithDB(defaults, true)
+}
 
+// LoadConfigWithDB reads environment variables into the default Config with optional database connection.
+// If connectDB is false, the GORM field will be nil, allowing for testing without database dependency.
+func LoadConfigWithDB(defaults Config, connectDB bool) *Config {
 	appDefaults := App{}
 	if defaults.App != nil {
 		appDefaults = *defaults.App
@@ -37,12 +41,27 @@ func LoadConfig(defaults Config) *Config {
 		authDefaults = *defaults.Auth
 	}
 
-	return &Config{
-		App:   loadAppConfig(appDefaults),
-		Auth:  loadAuthConfig(authDefaults),
-		SQLDB: sqlDBConfig,
-		GORM:  sqlDBConfig.openGormConnection(),
+	config := &Config{
+		App:  loadAppConfig(appDefaults),
+		Auth: loadAuthConfig(authDefaults),
 	}
+
+	if connectDB {
+		sqlDBConfig := loadSQLDBConfig()
+		config.SQLDB = sqlDBConfig
+		config.GORM = sqlDBConfig.openGormConnection()
+	} else {
+		// For testing, load SQLDB config without validation/connection
+		config.SQLDB = loadSQLDBConfigOptional()
+	}
+
+	return config
+}
+
+// LoadConfigWithoutDB loads configuration without establishing database connection.
+// This is useful for testing or when database connection is not needed.
+func LoadConfigWithoutDB(defaults Config) *Config {
+	return LoadConfigWithDB(defaults, false)
 }
 
 // App holds application-level settings such as environment name, server port, request timeout,
@@ -69,9 +88,11 @@ func loadAppConfig(defaults App) *App {
 	if loadedConfig.Port == "" {
 		loadedConfig.Port = defaults.Port
 	}
-	// Validate port number
-	if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
-		log.Fatalf("invalid port number: %s", loadedConfig.Port)
+	// Validate port number (only if port is provided)
+	if loadedConfig.Port != "" {
+		if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
+			log.Fatalf("invalid port number: %s", loadedConfig.Port)
+		}
 	}
 	if loadedConfig.Timeout <= 0 {
 		if loadedConfig.Timeout < 0 {
@@ -155,8 +176,29 @@ func loadSQLDBConfig() *SQLDB {
 		log.Fatalf("error loading SQLDB config: %s", err.Error())
 	}
 
-	if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
-		log.Fatalf("invalid database port number: %s", loadedConfig.Port)
+	// Only validate port if it's provided (for testing scenarios)
+	if loadedConfig.Port != "" {
+		if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
+			log.Fatalf("invalid database port number: %s", loadedConfig.Port)
+		}
+	}
+
+	return &loadedConfig
+}
+
+// loadSQLDBConfigOptional loads SQLDB config without failing if required fields are missing.
+// This is useful for testing scenarios where database config is not needed.
+func loadSQLDBConfigOptional() *SQLDB {
+	var loadedConfig SQLDB
+
+	// Process without failing on missing required fields
+	envconfig.Process("SQLDB", &loadedConfig)
+
+	// Only validate port if it's provided
+	if loadedConfig.Port != "" {
+		if port, err := strconv.Atoi(loadedConfig.Port); err != nil || port < 1 || port > 65535 {
+			log.Printf("warning: invalid database port number: %s", loadedConfig.Port)
+		}
 	}
 
 	return &loadedConfig

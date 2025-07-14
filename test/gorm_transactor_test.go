@@ -3,6 +3,7 @@ package ezutil_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/itsLeonB/ezutil"
@@ -16,7 +17,7 @@ import (
 // Test model for transactor testing
 type TransactorTestModel struct {
 	ID   uint   `gorm:"primarykey"`
-	Name string `gorm:"size:100"`
+	Name string `gorm:"size:100;not null;uniqueIndex"`
 }
 
 func setupTransactorTestDB(t *testing.T) *gorm.DB {
@@ -336,22 +337,46 @@ func TestTransactor_ErrorHandling(t *testing.T) {
 	transactor := ezutil.NewTransactor(db)
 	ctx := context.Background()
 
-	t.Run("database error in transaction", func(t *testing.T) {
+	t.Run("database error in transaction - duplicate unique key", func(t *testing.T) {
+		// First, create a record to establish a unique constraint violation
+		model1 := TransactorTestModel{Name: "UniqueTest"}
+		err := db.Create(&model1).Error
+		require.NoError(t, err)
+
+		// Now try to create another record with the same name (violates unique constraint)
+		err = transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+			tx, err := ezutil.GetTxFromContext(ctx)
+			require.NoError(t, err)
+
+			// Try to create a record with duplicate unique key
+			model2 := TransactorTestModel{Name: "UniqueTest"} // Same name - violates uniqueIndex
+			return tx.Create(&model2).Error
+		})
+
+		// Should return a database error due to unique constraint violation
+		assert.Error(t, err)
+		assert.Contains(t, strings.ToLower(err.Error()), "unique")
+	})
+
+	t.Run("database error in transaction - null constraint violation", func(t *testing.T) {
 		err := transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 			tx, err := ezutil.GetTxFromContext(ctx)
 			require.NoError(t, err)
 
-			// Try to create a record with invalid data (e.g., violate constraints)
-			// This will cause a database error
-			model := TransactorTestModel{Name: ""} // Assuming name has constraints
-			return tx.Create(&model).Error
+			// Try to create a record with null name (violates not null constraint)
+			// We'll use raw SQL to bypass GORM's validation and hit the database constraint
+			return tx.Exec("INSERT INTO transactor_test_models (name) VALUES (NULL)").Error
 		})
 
-		// Should handle the database error gracefully
-		// The exact error depends on database constraints, but it should not panic
-		if err != nil {
-			assert.NotNil(t, err)
-		}
+		// Should return a database error due to NOT NULL constraint violation
+		assert.Error(t, err)
+		// Different databases have different error messages for NOT NULL violations
+		errorMsg := strings.ToLower(err.Error())
+		assert.True(t, 
+			strings.Contains(errorMsg, "not null") || 
+			strings.Contains(errorMsg, "null") || 
+			strings.Contains(errorMsg, "constraint"),
+			"Expected NOT NULL constraint error, got: %s", err.Error())
 	})
 
 	t.Run("panic in transaction", func(t *testing.T) {
