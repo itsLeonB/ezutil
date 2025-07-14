@@ -192,7 +192,7 @@ func loadSQLDBConfigOptional() *SQLDB {
 	var loadedConfig SQLDB
 
 	// Process without failing on missing required fields
-	envconfig.Process("SQLDB", &loadedConfig)
+	_ = envconfig.Process("SQLDB", &loadedConfig)
 
 	// Only validate port if it's provided
 	if loadedConfig.Port != "" {
