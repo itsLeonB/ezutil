@@ -6,6 +6,7 @@ import (
 	"github.com/itsLeonB/ezutil/internal"
 	"github.com/rotisserie/eris"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Paginate returns a GORM scope that applies pagination to a query.
@@ -67,5 +68,20 @@ func BetweenTime(col string, start, end time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		query, _ := GetTimeRangeClause(col, start, end)
 		return db.Where(query)
+	}
+}
+
+func DefaultOrder() func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Order("created_at DESC")
+	}
+}
+
+func ForUpdate(enable bool) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if enable {
+			return db.Clauses(clause.Locking{Strength: clause.LockingStrengthUpdate})
+		}
+		return db
 	}
 }
