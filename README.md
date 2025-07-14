@@ -1,5 +1,10 @@
 # EZUtil
 
+[![CI](https://github.com/itsLeonB/ezutil/workflows/CI/badge.svg)](https://github.com/itsLeonB/ezutil/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/itsLeonB/ezutil)](https://goreportcard.com/report/github.com/itsLeonB/ezutil)
+[![codecov](https://codecov.io/gh/itsLeonB/ezutil/branch/main/graph/badge.svg)](https://codecov.io/gh/itsLeonB/ezutil)
+[![Go Reference](https://pkg.go.dev/badge/github.com/itsLeonB/ezutil.svg)](https://pkg.go.dev/github.com/itsLeonB/ezutil)
+
 A comprehensive Go utility library that provides common functionality for web applications built with Gin, GORM, and other popular Go frameworks.
 
 ## Features
@@ -189,6 +194,53 @@ ezutil/
 ├── time_utils.go         # Time/date utilities
 └── go.mod                # Go module definition
 ```
+
+## Testing
+
+EZUtil includes a comprehensive test suite covering all exported functions and methods. The tests are located in the `test/` directory and use the `ezutil_test` package.
+
+### Continuous Integration
+
+The project uses GitHub Actions for continuous integration, automatically running tests on:
+- **Go versions**: 1.23, 1.24
+- **Triggers**: Push to main/develop branches and pull requests
+- **Jobs**: Tests, linting, build verification, and security scanning
+- **Coverage**: Automatic coverage reporting to Codecov
+
+### Running Tests Locally
+
+Use the provided Makefile commands to run tests:
+
+```bash
+# Show all available commands
+make help
+
+# Run all tests (quick)
+make test
+
+# Run tests with verbose output
+make test-verbose
+
+# Run tests with coverage report
+make test-coverage
+
+# Generate HTML coverage report
+make test-coverage-html
+
+# Clean test cache and run tests
+make test-clean
+```
+
+### Test Coverage
+
+The test suite provides comprehensive coverage including:
+- ✅ All exported functions and methods
+- ✅ Happy path scenarios and error conditions
+- ✅ Edge cases and input validation
+- ✅ Database operations (using in-memory SQLite)
+- ✅ HTTP request/response handling
+- ✅ JWT token operations
+- ✅ Configuration loading and validation
 
 ## Contributing
 

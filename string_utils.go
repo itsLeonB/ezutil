@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/google/uuid"
 	"github.com/rotisserie/eris"
@@ -55,4 +57,14 @@ func GenerateRandomString(length int) (string, error) {
 	}
 
 	return base64.URLEncoding.EncodeToString(randomBytes), nil
+}
+
+// Capitalize converts the first character of a word to uppercase and the rest to lowercase.
+// Returns an empty string if the input is empty.
+// Useful for formatting names and titles consistently.
+func Capitalize(word string) string {
+	if len(word) == 0 {
+		return ""
+	}
+	return string(unicode.ToUpper(rune(word[0]))) + strings.ToLower(word[1:])
 }

@@ -26,6 +26,9 @@ func GetPathParam[T any](ctx *gin.Context, key string) (T, bool, error) {
 	return parsedValue, true, nil
 }
 
+// GetRequiredPathParam extracts and parses a required path parameter from the Gin context.
+// It returns the parsed value of type T or an error if the parameter is missing or parsing fails.
+// Unlike GetPathParam, this function treats missing parameters as an error condition.
 func GetRequiredPathParam[T any](ctx *gin.Context, key string) (T, error) {
 	var zero T
 
@@ -74,6 +77,9 @@ func GetFromContext[T any](ctx *gin.Context, key string) (T, error) {
 	return asserted, nil
 }
 
+// GetAndParseFromContext retrieves a string value from the Gin context and parses it to type T.
+// It combines GetFromContext and Parse operations in a single function call.
+// Returns the parsed value or an error if the key doesn't exist or parsing fails.
 func GetAndParseFromContext[T any](ctx *gin.Context, key string) (T, error) {
 	var zero T
 

@@ -60,7 +60,19 @@ func (t *GormTransactor) Rollback(ctx context.Context) {
 }
 
 func (t *GormTransactor) WithinTransaction(ctx context.Context, serviceFn func(ctx context.Context) error) error {
-	ctx, err := t.Begin(ctx)
+	// Check if we're already within a transaction
+	existingTx, err := GetTxFromContext(ctx)
+	if err != nil {
+		return eris.Wrap(err, "error checking existing transaction")
+	}
+
+	// If we're already in a transaction, just execute the service function
+	if existingTx != nil {
+		return serviceFn(ctx)
+	}
+
+	// Start a new transaction
+	ctx, err = t.Begin(ctx)
 	if err != nil {
 		return eris.Wrap(err, "error starting transaction")
 	}

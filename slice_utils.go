@@ -13,6 +13,9 @@ func MapSlice[T any, U any](input []T, mapperFunc func(T) U) []U {
 	return output
 }
 
+// MapSliceWithError applies a mapping function to each element of an input slice with error handling.
+// The function transforms elements of type T to type U using the provided mapperFunc.
+// Returns an error immediately if any transformation fails, providing fail-fast behavior.
 func MapSliceWithError[T any, U any](input []T, mapperFunc func(T) (U, error)) ([]U, error) {
 	output := make([]U, len(input))
 
