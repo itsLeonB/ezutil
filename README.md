@@ -202,7 +202,7 @@ EZUtil includes a comprehensive test suite covering all exported functions and m
 ### Continuous Integration
 
 The project uses GitHub Actions for continuous integration, automatically running tests on:
-- **Go versions**: 1.21, 1.22, 1.23
+- **Go versions**: 1.23, 1.24
 - **Triggers**: Push to main/develop branches and pull requests
 - **Jobs**: Tests, linting, build verification, and security scanning
 - **Coverage**: Automatic coverage reporting to Codecov

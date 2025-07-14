@@ -9,7 +9,7 @@ This directory contains GitHub Actions workflows for continuous integration and 
 
 - **Triggers**: Push to `main`/`develop` branches, Pull Requests
 - **Jobs**:
-  - **Test**: Runs comprehensive test suite across Go versions 1.21, 1.22, 1.23
+  - **Test**: Runs comprehensive test suite across Go versions 1.23, 1.24
   - **Lint**: Code quality checks using golangci-lint
   - **Build**: Compilation verification across all supported Go versions
 - **Features**:
@@ -62,9 +62,8 @@ For full functionality, the following GitHub secrets should be configured:
 ### Supported Go Versions
 
 All workflows test against:
-- Go 1.21
-- Go 1.22  
 - Go 1.23
+- Go 1.24
 
 ### Caching Strategy
 
