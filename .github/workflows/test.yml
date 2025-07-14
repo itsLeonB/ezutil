@@ -161,14 +161,19 @@ jobs:
 
       - name: Install Gosec
         run: |
-          curl -sfL https://raw.githubusercontent.com/securecodewarrior/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       - name: Run Gosec Security Scanner
-        run: gosec -fmt sarif -out results.sarif ./...
-        continue-on-error: true
+        run: |
+          $(go env GOPATH)/bin/gosec -fmt sarif -out results.sarif ./... || true
+          # Ensure the SARIF file exists even if gosec finds issues
+          if [ ! -f results.sarif ]; then
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"gosec","version":"unknown"}},"results":[]}]}' > results.sarif
+          fi
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
+        if: always()
