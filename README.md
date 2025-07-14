@@ -1,86 +1,119 @@
 # EZUtil
 
 [![CI](https://github.com/itsLeonB/ezutil/workflows/CI/badge.svg)](https://github.com/itsLeonB/ezutil/actions)
+[![Tests](https://github.com/itsLeonB/ezutil/workflows/Tests/badge.svg)](https://github.com/itsLeonB/ezutil/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/itsLeonB/ezutil)](https://goreportcard.com/report/github.com/itsLeonB/ezutil)
 [![codecov](https://codecov.io/gh/itsLeonB/ezutil/branch/main/graph/badge.svg)](https://codecov.io/gh/itsLeonB/ezutil)
 [![Go Reference](https://pkg.go.dev/badge/github.com/itsLeonB/ezutil.svg)](https://pkg.go.dev/github.com/itsLeonB/ezutil)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive Go utility library that provides common functionality for web applications built with Gin, GORM, and other popular Go frameworks.
+A comprehensive, production-ready Go utility library that provides common functionality for web applications built with Gin, GORM, and other popular Go frameworks. EZUtil is designed to accelerate development by providing well-tested, reusable components for modern Go web applications.
 
-## Features
+## 🚀 Features
 
 ### 🌐 HTTP & Web Utilities
-- **Gin Utilities**: Parameter extraction, request binding, and response helpers
-- **Gin Middlewares**: Common middleware implementations for web applications
-- **Gin Routing**: Simplified routing utilities and helpers
-- **HTTP Utils**: General HTTP-related utility functions
+- **Gin Parameter Extraction**: Type-safe parameter parsing with `GetPathParam[T]`, `GetQueryParam[T]`
+- **Request Binding**: Simplified JSON/form data binding with validation
+- **Response Helpers**: Standardized JSON response utilities
+- **Middleware Support**: Common middleware implementations for web applications
+- **Routing Utilities**: Simplified routing helpers and patterns
 
 ### 🗄️ Database & ORM
-- **GORM Utilities**: Database connection management and configuration
-- **GORM Scopes**: Reusable query scopes for common database operations
-- **GORM Transactor**: Transaction management utilities
-- **SQL Utils**: General SQL utility functions
+- **GORM Integration**: Seamless database connection management and configuration
+- **Query Scopes**: Reusable, composable query scopes for common database operations
+- **Transaction Management**: Robust transaction utilities with nested transaction support
+- **Multi-Database Support**: MySQL and PostgreSQL drivers with automatic configuration
+- **Connection Pooling**: Optimized database connection management
 
 ### 🔧 Configuration Management
-- **Environment-based Configuration**: Load configuration from environment variables
-- **Database Configuration**: Automatic database connection setup (MySQL/PostgreSQL)
-- **Application Configuration**: Centralized app settings management
+- **Environment-Based Config**: Automatic configuration loading from environment variables
+- **Type-Safe Parsing**: Built-in validation and type conversion for configuration values
+- **Database Auto-Configuration**: Automatic database connection setup with fallback defaults
+- **Application Settings**: Centralized management of app-level configuration
+- **Flexible Loading**: Support for loading configuration with or without database dependency
 
 ### 🔐 Authentication & Security
-- **JWT Service**: Token creation and verification
-- **Authentication Utilities**: User authentication helpers
+- **JWT Service**: Complete JWT token creation, verification, and management
+- **Secure Token Handling**: Built-in token expiration and refresh capabilities
+- **Authentication Middleware**: Ready-to-use authentication middleware for Gin
+- **Security Best Practices**: Implements industry-standard security patterns
 
 ### 🛠️ General Utilities
-- **String Utils**: String parsing, random string generation, and manipulation
-- **Time Utils**: Date/time formatting and manipulation functions
-- **Slice Utils**: Functional programming utilities for slice operations
-- **Error Handling**: Structured error types with HTTP context
-- **Template Utils**: Template rendering utilities (Templ integration)
+- **Type-Safe Parsing**: Generic `Parse[T]` function for string-to-type conversion
+- **String Utilities**: Random string generation, manipulation, and validation
+- **Time Management**: Date/time formatting, manipulation, and timezone handling
+- **Slice Operations**: Functional programming utilities (`MapSlice`, `MapSliceWithError`)
+- **Error Handling**: Structured error types with HTTP context and stack traces
+- **Template Integration**: Seamless integration with Templ template engine
+- **UUID Support**: UUID generation, parsing, and validation utilities
 
-## Installation
+## 📦 Installation
 
 ```bash
 go get github.com/itsLeonB/ezutil
 ```
 
-## Quick Start
+**Requirements:**
+- Go 1.23 or higher
+- Compatible with Go 1.23, and 1.24
 
-### Basic Usage
+## 🏃 Quick Start
+
+### Basic Web Application
 
 ```go
 package main
 
 import (
+    "log"
+    "time"
+    
     "github.com/gin-gonic/gin"
     "github.com/itsLeonB/ezutil"
 )
 
 func main() {
     // Load configuration from environment
-    config, err := ezutil.LoadConfig()
-    if err != nil {
-        panic(err)
+    defaults := ezutil.Config{
+        App: &ezutil.App{
+            Env:        "development",
+            Port:       "8080",
+            Timeout:    30 * time.Second,
+            ClientUrls: []string{"http://localhost:8080"},
+            Timezone:   "UTC",
+        },
+        Auth: &ezutil.Auth{
+            SecretKey:      "your-secret-key",
+            TokenDuration:  24 * time.Hour,
+            CookieDuration: 7 * 24 * time.Hour,
+            Issuer:         "your-app",
+            URL:            "http://localhost:8080",
+        },
     }
-
+    
+    config := ezutil.LoadConfig(defaults)
+    
     // Create Gin router
     r := gin.Default()
     
-    // Use ezutil helpers
+    // Use EZUtil helpers for type-safe parameter extraction
     r.GET("/user/:id", func(c *gin.Context) {
         userID, exists, err := ezutil.GetPathParam[int](c, "id")
         if err != nil {
-            c.JSON(400, gin.H{"error": "Invalid user ID"})
+            c.JSON(400, gin.H{"error": "Invalid user ID format"})
             return
         }
         if !exists {
-            c.JSON(400, gin.H{"error": "User ID required"})
+            c.JSON(400, gin.H{"error": "User ID is required"})
             return
         }
         
-        c.JSON(200, gin.H{"user_id": userID})
+        c.JSON(200, gin.H{"user_id": userID, "message": "User found"})
     })
     
-    r.Run(":8080")
+    // Start server
+    log.Printf("Server starting on port %s", config.App.Port)
+    r.Run(":" + config.App.Port)
 }
 ```
 
@@ -90,97 +123,176 @@ Create a `.env` file or set environment variables:
 
 ```env
 # Application Configuration
-APP_NAME=MyApp
-APP_ENV=development
+APP_ENV=production
 APP_PORT=8080
+APP_TIMEOUT=30s
+APP_TIMEZONE=UTC
+APP_CLIENTURLS=http://localhost:8080,https://yourdomain.com
 
 # Database Configuration
-DB_DRIVER=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=myapp
-DB_USER=username
-DB_PASSWORD=password
+SQLDB_HOST=localhost
+SQLDB_PORT=5432
+SQLDB_NAME=myapp
+SQLDB_USER=username
+SQLDB_PASSWORD=password
+SQLDB_DRIVER=postgres
 
-# JWT Configuration
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=24h
+# Authentication Configuration
+AUTH_SECRETKEY=your-super-secret-jwt-key
+AUTH_TOKENDURATION=24h
+AUTH_COOKIEDURATION=168h
+AUTH_ISSUER=myapp
+AUTH_URL=https://yourdomain.com
 ```
 
-### Using Utilities
+### Advanced Usage Examples
 
-#### String Parsing
+#### Database Operations with Transactions
+
 ```go
-// Parse string to different types
+// Initialize transactor
+transactor := ezutil.NewTransactor(db)
+
+// Use transactions with automatic rollback on error
+err := transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+    tx, err := ezutil.GetTxFromContext(ctx)
+    if err != nil {
+        return err
+    }
+    
+    // Perform database operations within transaction
+    user := User{Name: "John Doe", Email: "john@example.com"}
+    if err := tx.Create(&user).Error; err != nil {
+        return err // Transaction will be rolled back automatically
+    }
+    
+    // Nested transactions are supported
+    return transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+        innerTx, err := ezutil.GetTxFromContext(ctx)
+        if err != nil {
+            return err
+        }
+        
+        profile := Profile{UserID: user.ID, Bio: "Software Developer"}
+        return innerTx.Create(&profile).Error
+    })
+})
+
+if err != nil {
+    log.Printf("Transaction failed: %v", err)
+}
+```
+
+#### Type-Safe String Parsing
+
+```go
+// Parse various types from strings
 userID, err := ezutil.Parse[int]("123")
+if err != nil {
+    log.Printf("Invalid user ID: %v", err)
+}
+
 isActive, err := ezutil.Parse[bool]("true")
+price, err := ezutil.Parse[float64]("29.99")
 uuid, err := ezutil.Parse[uuid.UUID]("550e8400-e29b-41d4-a716-446655440000")
 
-// Generate random strings
-randomStr, err := ezutil.GenerateRandomString(32)
+// Generate secure random strings
+apiKey, err := ezutil.GenerateRandomString(32)
+if err != nil {
+    log.Printf("Failed to generate API key: %v", err)
+}
 ```
 
-#### Slice Operations
+#### Functional Slice Operations
+
 ```go
-// Transform slices functionally
+// Transform slices with type safety
 numbers := []int{1, 2, 3, 4, 5}
 doubled := ezutil.MapSlice(numbers, func(n int) int {
     return n * 2
 })
+// Result: [2, 4, 6, 8, 10]
 
-// Map with error handling
+// Handle errors during transformation
 strings := []string{"1", "2", "invalid", "4"}
 numbers, err := ezutil.MapSliceWithError(strings, func(s string) (int, error) {
     return ezutil.Parse[int](s)
 })
+if err != nil {
+    log.Printf("Conversion failed: %v", err)
+}
 ```
 
-#### Time Utilities
-```go
-// Get start and end of day
-startOfDay, err := ezutil.GetStartOfDay(2024, 1, 15)
-endOfDay, err := ezutil.GetEndOfDay(2024, 1, 15)
+#### Advanced Error Handling
 
-// Format time with null handling
-formatted := ezutil.FormatTimeNullable(time.Now(), "2006-01-02 15:04:05")
-```
-
-#### Error Handling
 ```go
 // Create structured application errors
 appErr := ezutil.NewAppError(
     "VALIDATION_ERROR",
     "Invalid input provided",
     http.StatusBadRequest,
-    map[string]string{"field": "email", "issue": "invalid format"},
+    map[string]string{
+        "field": "email",
+        "issue": "invalid format",
+    },
 )
 
-// Use in Gin handlers
+// Use in Gin handlers with automatic error response
+r.POST("/users", func(c *gin.Context) {
+    var user User
+    if err := c.ShouldBindJSON(&user); err != nil {
+        ezutil.HandleError(c, ezutil.NewAppError(
+            "BIND_ERROR",
+            "Invalid JSON payload",
+            http.StatusBadRequest,
+            nil,
+        ))
+        return
+    }
+    
+    // Process user...
+})
+```
+
+#### JWT Authentication
+
+```go
+// Create JWT service
+jwtService := ezutil.NewJWTService(config.Auth.SecretKey, config.Auth.Issuer)
+
+// Generate tokens
+claims := map[string]interface{}{
+    "user_id": 123,
+    "role":    "admin",
+}
+
+token, err := jwtService.GenerateToken(claims, config.Auth.TokenDuration)
 if err != nil {
-    ezutil.HandleError(c, appErr)
-    return
+    log.Printf("Token generation failed: %v", err)
+}
+
+// Verify tokens
+parsedClaims, err := jwtService.VerifyToken(token)
+if err != nil {
+    log.Printf("Token verification failed: %v", err)
 }
 ```
 
-## Dependencies
-
-This library builds upon several excellent Go packages:
-
-- **[Gin](https://github.com/gin-gonic/gin)**: HTTP web framework
-- **[GORM](https://gorm.io/)**: ORM library for database operations
-- **[Eris](https://github.com/rotisserie/eris)**: Error handling and stack traces
-- **[JWT](https://github.com/golang-jwt/jwt)**: JSON Web Token implementation
-- **[Templ](https://github.com/a-h/templ)**: Template engine integration
-- **[Envconfig](https://github.com/kelseyhightower/envconfig)**: Environment variable configuration
-- **[UUID](https://github.com/google/uuid)**: UUID generation and parsing
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 ezutil/
+├── .github/
+│   └── workflows/           # CI/CD workflows
+│       ├── ci.yml          # Main CI pipeline
+│       ├── test.yml        # Extended testing with security scans
+│       └── lint.yml        # Code linting
+├── test/                   # Comprehensive test suite
+│   ├── *_test.go          # Test files for each module
+│   ├── go.mod             # Test module dependencies
+│   └── go.sum             # Test dependency checksums
 ├── config/                 # Configuration structures
 ├── internal/              # Internal utilities
-├── .github/               # GitHub workflows and templates
 ├── config_loader.go       # Environment configuration loading
 ├── errors.go              # Error handling utilities
 ├── gin_*.go              # Gin framework utilities
@@ -192,24 +304,33 @@ ezutil/
 ├── string_utils.go       # String manipulation utilities
 ├── templ_utils.go        # Template utilities
 ├── time_utils.go         # Time/date utilities
-└── go.mod                # Go module definition
+├── uuid_utils.go         # UUID utilities
+├── Makefile              # Build and test automation
+├── go.mod                # Go module definition
+└── README.md             # This file
 ```
 
-## Testing
+## 🧪 Testing
 
-EZUtil includes a comprehensive test suite covering all exported functions and methods. The tests are located in the `test/` directory and use the `ezutil_test` package.
+EZUtil includes a comprehensive test suite with over 200 individual test cases covering all exported functions and methods. The tests are organized in a separate `test/` directory using the `ezutil_test` package for proper isolation.
 
-### Continuous Integration
+### Test Coverage
 
-The project uses GitHub Actions for continuous integration, automatically running tests on:
-- **Go versions**: 1.23, 1.24
-- **Triggers**: Push to main/develop branches and pull requests
-- **Jobs**: Tests, linting, build verification, and security scanning
-- **Coverage**: Automatic coverage reporting to Codecov
+The test suite provides comprehensive coverage including:
+- ✅ **All exported functions and methods** - 100% coverage of public API
+- ✅ **Happy path scenarios** - Normal operation testing
+- ✅ **Error conditions** - Comprehensive error handling validation
+- ✅ **Edge cases** - Boundary condition testing
+- ✅ **Database operations** - Using in-memory SQLite for isolation
+- ✅ **HTTP request/response handling** - Complete web layer testing
+- ✅ **JWT token operations** - Authentication flow testing
+- ✅ **Configuration loading** - Environment variable processing
+- ✅ **Transaction management** - Database transaction testing
+- ✅ **Type safety** - Generic function validation
 
-### Running Tests Locally
+### Running Tests
 
-Use the provided Makefile commands to run tests:
+Use the provided Makefile commands for various testing scenarios:
 
 ```bash
 # Show all available commands
@@ -227,39 +348,187 @@ make test-coverage
 # Generate HTML coverage report
 make test-coverage-html
 
-# Clean test cache and run tests
+# Clean test cache and run fresh tests
 make test-clean
 ```
 
-### Test Coverage
+### Continuous Integration
 
-The test suite provides comprehensive coverage including:
-- ✅ All exported functions and methods
-- ✅ Happy path scenarios and error conditions
-- ✅ Edge cases and input validation
-- ✅ Database operations (using in-memory SQLite)
-- ✅ HTTP request/response handling
-- ✅ JWT token operations
-- ✅ Configuration loading and validation
+The project uses GitHub Actions for comprehensive CI/CD:
 
-## Contributing
+#### **Main CI Pipeline** (`ci.yml`)
+- **Multi-version testing**: Go 1.23, 1.24
+- **Automated testing**: Full test suite execution
+- **Coverage reporting**: Automatic upload to Codecov
+- **Build verification**: Cross-version compatibility
+
+#### **Extended Testing** (`test.yml`)
+- **Comprehensive testing**: All test scenarios
+- **Security scanning**: Gosec static analysis
+- **Dependency verification**: Module integrity checks
+- **SARIF reporting**: Security findings integration
+
+#### **Code Quality** (`lint.yml`)
+- **Static analysis**: golangci-lint integration
+- **Code formatting**: Automated style checking
+- **Best practices**: Go idiom enforcement
+
+### Test Organization
+
+```
+test/
+├── config_loader_test.go    # Configuration loading tests
+├── errors_test.go           # Error handling tests
+├── gin_utils_test.go        # Gin utilities tests
+├── gorm_scopes_test.go      # Database scope tests
+├── gorm_transactor_test.go  # Transaction management tests
+├── http_utils_test.go       # HTTP utility tests
+├── services_test.go         # Service layer tests (JWT, etc.)
+├── slice_utils_test.go      # Slice operation tests
+├── sql_utils_test.go        # SQL utility tests
+├── string_utils_test.go     # String manipulation tests
+├── templ_utils_test.go      # Template utility tests
+├── time_utils_test.go       # Time/date utility tests
+└── uuid_utils_test.go       # UUID utility tests
+```
+
+## 📚 Dependencies
+
+EZUtil builds upon several excellent Go packages:
+
+### Core Dependencies
+- **[Gin](https://github.com/gin-gonic/gin)** `v1.9.1` - HTTP web framework
+- **[GORM](https://gorm.io/)** `v1.25.5` - ORM library for database operations
+- **[Eris](https://github.com/rotisserie/eris)** `v0.8.1` - Error handling and stack traces
+- **[JWT](https://github.com/golang-jwt/jwt)** `v5.2.0` - JSON Web Token implementation
+
+### Database Drivers
+- **[MySQL Driver](https://github.com/go-sql-driver/mysql)** - MySQL database support
+- **[PostgreSQL Driver](https://github.com/lib/pq)** - PostgreSQL database support
+
+### Utility Libraries
+- **[Templ](https://github.com/a-h/templ)** `v0.2.543` - Template engine integration
+- **[Envconfig](https://github.com/kelseyhightower/envconfig)** `v1.4.0` - Environment variable configuration
+- **[UUID](https://github.com/google/uuid)** `v1.4.0` - UUID generation and parsing
+
+### Development Dependencies
+- **[Testify](https://github.com/stretchr/testify)** `v1.8.4` - Testing assertions and mocks
+- **[SQLite Driver](https://github.com/mattn/go-sqlite3)** - In-memory testing database
+
+## 🔧 Configuration Reference
+
+### Application Configuration (`APP_*`)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `APP_ENV` | string | `development` | Application environment |
+| `APP_PORT` | string | `3000` | Server port number |
+| `APP_TIMEOUT` | duration | `10s` | Request timeout |
+| `APP_CLIENTURLS` | []string | `["http://localhost:3000"]` | Allowed client URLs |
+| `APP_TIMEZONE` | string | `America/New_York` | Application timezone |
+
+### Database Configuration (`SQLDB_*`)
+
+| Variable | Type | Required | Description |
+|----------|------|----------|-------------|
+| `SQLDB_HOST` | string | ✅ | Database host |
+| `SQLDB_PORT` | string | ✅ | Database port |
+| `SQLDB_NAME` | string | ✅ | Database name |
+| `SQLDB_USER` | string | ✅ | Database username |
+| `SQLDB_PASSWORD` | string | ✅ | Database password |
+| `SQLDB_DRIVER` | string | ✅ | Database driver (`mysql` or `postgres`) |
+
+### Authentication Configuration (`AUTH_*`)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `AUTH_SECRETKEY` | string | `default-secret` | JWT signing key |
+| `AUTH_TOKENDURATION` | duration | `30m` | JWT token lifetime |
+| `AUTH_COOKIEDURATION` | duration | `12h` | Cookie lifetime |
+| `AUTH_ISSUER` | string | `default-issuer` | JWT issuer |
+| `AUTH_URL` | string | `http://localhost:3000` | Authentication service URL |
+
+## 🚀 Performance & Best Practices
+
+### Database Optimization
+- **Connection Pooling**: Automatic connection pool management
+- **Transaction Efficiency**: Nested transaction support with proper rollback
+- **Query Optimization**: Reusable scopes for common query patterns
+- **Type Safety**: Compile-time type checking for database operations
+
+### Security Features
+- **JWT Security**: Secure token generation with configurable expiration
+- **Input Validation**: Built-in parameter validation and sanitization
+- **Error Handling**: Structured errors without sensitive information leakage
+- **HTTPS Support**: Ready for production HTTPS deployment
+
+### Development Experience
+- **Type Safety**: Generic functions for compile-time type checking
+- **Error Context**: Rich error information with stack traces
+- **Testing Support**: Comprehensive test utilities and mocks
+- **Documentation**: Extensive inline documentation and examples
+
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Development Setup
 
-## License
+1. **Fork and Clone**
+   ```bash
+   git clone https://github.com/yourusername/ezutil.git
+   cd ezutil
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   go mod download
+   cd test && go mod download
+   ```
+
+3. **Run Tests**
+   ```bash
+   make test-verbose
+   ```
+
+4. **Run Linting**
+   ```bash
+   make lint
+   ```
+
+### Contribution Guidelines
+
+1. **Code Quality**: Ensure all tests pass and maintain test coverage
+2. **Documentation**: Update documentation for new features
+3. **Commit Messages**: Use clear, descriptive commit messages
+4. **Pull Requests**: Include description of changes and test results
+
+### Development Workflow
+
+1. Create your feature branch (`git checkout -b feature/amazing-feature`)
+2. Make your changes and add tests
+3. Ensure all tests pass (`make test`)
+4. Run linting (`make lint`)
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Author
+## 👨‍💻 Author
 
 **Ellion Blessan** - [itsLeonB](https://github.com/itsLeonB)
 
+## 🙏 Acknowledgments
+
+- The Go community for excellent libraries and tools
+- Contributors who help improve this project
+- Users who provide feedback and bug reports
+
 ---
 
-*EZUtil - Making Go web development easier, one utility at a time.*
+**EZUtil** - Making Go web development easier, one utility at a time. 🚀
+
+*Built with ❤️ for the Go community*
