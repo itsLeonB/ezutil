@@ -159,14 +159,13 @@ jobs:
           go mod download
           cd test && go mod download
 
-      - name: Install Gosec
+      - name: Install and Run Gosec
         run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Run Gosec Security Scanner
-        run: |
-          $(go env GOPATH)/bin/gosec -fmt sarif -out results.sarif ./... || true
+          # Download and install gosec binary directly
+          curl -sfL https://github.com/securecodewarrior/gosec/releases/latest/download/gosec_linux_amd64.tar.gz | tar -xz -C /tmp
+          chmod +x /tmp/gosec
+          # Run gosec and create SARIF output
+          /tmp/gosec -fmt sarif -out results.sarif ./... || true
           # Ensure the SARIF file exists even if gosec finds issues
           if [ ! -f results.sarif ]; then
             echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"gosec","version":"unknown"}},"results":[]}]}' > results.sarif
@@ -176,4 +175,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
-        if: always()
+        if: always() && hashFiles('results.sarif') != ''
