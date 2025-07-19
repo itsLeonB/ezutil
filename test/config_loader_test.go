@@ -61,16 +61,16 @@ func TestLoadConfigWithoutDB(t *testing.T) {
 	// Test that configuration was loaded correctly and environment variables override defaults
 	t.Run("app config loaded from environment", func(t *testing.T) {
 		assert.NotNil(t, config.App)
-		assert.Equal(t, "test", config.App.Env)                    // Overridden by APP_ENV
-		assert.Equal(t, "8080", config.App.Port)                  // Overridden by APP_PORT
-		assert.Equal(t, 30*time.Second, config.App.Timeout)       // Overridden by APP_TIMEOUT
-		assert.Equal(t, "UTC", config.App.Timezone)               // Overridden by APP_TIMEZONE
+		assert.Equal(t, "test", config.App.Env)                                   // Overridden by APP_ENV
+		assert.Equal(t, "8080", config.App.Port)                                  // Overridden by APP_PORT
+		assert.Equal(t, 30*time.Second, config.App.Timeout)                       // Overridden by APP_TIMEOUT
+		assert.Equal(t, "UTC", config.App.Timezone)                               // Overridden by APP_TIMEZONE
 		assert.Equal(t, []string{"http://localhost:3000"}, config.App.ClientUrls) // Uses default (not set in env)
 	})
 
 	t.Run("auth config loaded from environment", func(t *testing.T) {
 		assert.NotNil(t, config.Auth)
-		assert.Equal(t, "test-secret", config.Auth.SecretKey)      // Overridden by AUTH_SECRETKEY
+		assert.Equal(t, "test-secret", config.Auth.SecretKey)     // Overridden by AUTH_SECRETKEY
 		assert.Equal(t, 1*time.Hour, config.Auth.TokenDuration)   // Overridden by AUTH_TOKENDURATION
 		assert.Equal(t, 24*time.Hour, config.Auth.CookieDuration) // Overridden by AUTH_COOKIEDURATION
 		assert.Equal(t, "test-issuer", config.Auth.Issuer)        // Overridden by AUTH_ISSUER
