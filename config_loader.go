@@ -260,7 +260,7 @@ func (sqldb *SQLDB) getDSN() string {
 }
 
 func loadGenericConfig[T GenericConfig](prefix string, defaults T) T {
-	if err := envconfig.Process(prefix, &defaults); err != nil {
+	if err := envconfig.Process(prefix, defaults); err != nil {
 		log.Fatalf("error loading generic config: %s", err.Error())
 	}
 
