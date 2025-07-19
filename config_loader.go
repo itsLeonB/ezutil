@@ -12,14 +12,19 @@ import (
 	"gorm.io/gorm"
 )
 
+type GenericConfig interface {
+	Prefix() string
+}
+
 // Config represents the complete application configuration loaded from environment variables.
 // It aggregates all configuration sections including app settings, authentication, database parameters,
 // and the initialized GORM DB instance.
 type Config struct {
-	App   *App
-	Auth  *Auth
-	SQLDB *SQLDB
-	GORM  *gorm.DB
+	App     *App
+	Auth    *Auth
+	SQLDB   *SQLDB
+	GORM    *gorm.DB
+	Generic GenericConfig
 }
 
 // LoadConfig reads environment variables into the default Config, loads sub-configuration
@@ -50,6 +55,9 @@ func LoadConfigWithDB(defaults Config, connectDB bool) *Config {
 		sqlDBConfig := loadSQLDBConfig()
 		config.SQLDB = sqlDBConfig
 		config.GORM = sqlDBConfig.openGormConnection()
+		if defaults.Generic != nil {
+			config.Generic = loadGenericConfig(defaults.Generic.Prefix(), defaults.Generic)
+		}
 	} else {
 		// For testing, load SQLDB config without validation/connection
 		config.SQLDB = loadSQLDBConfigOptional()
@@ -249,4 +257,12 @@ func (sqldb *SQLDB) getDSN() string {
 		log.Fatalf("unsupported SQLDB driver: %s", sqldb.Driver)
 		return ""
 	}
+}
+
+func loadGenericConfig[T GenericConfig](prefix string, defaults T) T {
+	if err := envconfig.Process(prefix, &defaults); err != nil {
+		log.Fatalf("error loading generic config: %s", err.Error())
+	}
+
+	return defaults
 }
