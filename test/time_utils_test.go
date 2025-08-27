@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/itsLeonB/ezutil"
+	"github.com/itsLeonB/ezutil/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -84,7 +84,7 @@ func TestGetStartOfDay(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ezutil.GetStartOfDay(tt.year, tt.month, tt.day)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.True(t, result.IsZero())
@@ -164,7 +164,7 @@ func TestGetEndOfDay(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := ezutil.GetEndOfDay(tt.year, tt.month, tt.day)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.True(t, result.IsZero())
@@ -179,7 +179,7 @@ func TestGetEndOfDay(t *testing.T) {
 
 func TestFormatTimeNullable(t *testing.T) {
 	layout := "2006-01-02 15:04:05"
-	
+
 	tests := []struct {
 		name     string
 		time     time.Time
@@ -235,37 +235,37 @@ func TestFormatTimeNullable(t *testing.T) {
 func TestTimeUtilsIntegration(t *testing.T) {
 	// Test that start and end of day work together
 	year, month, day := 2024, 1, 15
-	
+
 	start, err := ezutil.GetStartOfDay(year, month, day)
 	require.NoError(t, err)
-	
+
 	end, err := ezutil.GetEndOfDay(year, month, day)
 	require.NoError(t, err)
-	
+
 	// Start should be before end
 	assert.True(t, start.Before(end))
-	
+
 	// They should be on the same date
 	assert.Equal(t, start.Year(), end.Year())
 	assert.Equal(t, start.Month(), end.Month())
 	assert.Equal(t, start.Day(), end.Day())
-	
+
 	// Start should be at midnight
 	assert.Equal(t, 0, start.Hour())
 	assert.Equal(t, 0, start.Minute())
 	assert.Equal(t, 0, start.Second())
 	assert.Equal(t, 0, start.Nanosecond())
-	
+
 	// End should be at end of day
 	assert.Equal(t, 23, end.Hour())
 	assert.Equal(t, 59, end.Minute())
 	assert.Equal(t, 59, end.Second())
 	assert.Equal(t, 999999999, end.Nanosecond())
-	
+
 	// Test formatting
 	startFormatted := ezutil.FormatTimeNullable(start, "2006-01-02 15:04:05")
 	endFormatted := ezutil.FormatTimeNullable(end, "2006-01-02 15:04:05")
-	
+
 	assert.Equal(t, "2024-01-15 00:00:00", startFormatted)
 	assert.Equal(t, "2024-01-15 23:59:59", endFormatted)
 }

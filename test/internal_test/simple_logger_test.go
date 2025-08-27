@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/itsLeonB/ezutil/internal"
+	"github.com/itsLeonB/ezutil/v2/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,11 +22,11 @@ func captureOutput(f func()) string {
 
 	f()
 
-	w.Close()
+	_ = w.Close()
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	return buf.String()
 }
 
