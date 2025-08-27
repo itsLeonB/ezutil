@@ -1,4 +1,4 @@
-module github.com/itsLeonB/ezutil
+module github.com/itsLeonB/ezutil/v2
 
 go 1.25.0
 

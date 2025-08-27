@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/itsLeonB/ezutil/internal"
+	"github.com/itsLeonB/ezutil/v2/internal"
 	"github.com/stretchr/testify/assert"
 )
 

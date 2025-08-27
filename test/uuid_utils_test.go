@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/itsLeonB/ezutil"
+	"github.com/itsLeonB/ezutil/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -167,7 +167,7 @@ func TestCompareUUID_ByteByByteComparison(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			uuidA := uuid.MustParse(tt.a)
 			uuidB := uuid.MustParse(tt.b)
-			
+
 			result := ezutil.CompareUUID(uuidA, uuidB)
 			assert.Equal(t, tt.expected, result)
 		})

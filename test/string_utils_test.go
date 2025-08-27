@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/itsLeonB/ezutil"
+	"github.com/itsLeonB/ezutil/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -166,11 +166,11 @@ func TestGenerateRandomString_Uniqueness(t *testing.T) {
 	// Generate multiple random strings and ensure they're different
 	length := 32
 	strings := make(map[string]bool)
-	
+
 	for i := 0; i < 100; i++ {
 		result, err := ezutil.GenerateRandomString(length)
 		require.NoError(t, err)
-		
+
 		// Check if we've seen this string before
 		assert.False(t, strings[result], "Generated duplicate random string: %s", result)
 		strings[result] = true

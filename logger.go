@@ -1,6 +1,6 @@
 package ezutil
 
-import "github.com/itsLeonB/ezutil/internal"
+import "github.com/itsLeonB/ezutil/v2/internal"
 
 type Logger interface {
 	Debug(args ...any)
