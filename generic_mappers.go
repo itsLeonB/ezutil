@@ -17,12 +17,32 @@ func FromProtoTime(t *timestamppb.Timestamp) time.Time {
 }
 
 func DecimalToMoney(d decimal.Decimal, currencyCode string) *money.Money {
-	// Split the decimal into whole units and fractional part
 	units := d.Truncate(0).IntPart()
-
-	// Get the fractional part and convert to nanos (10^-9)
 	fractional := d.Sub(decimal.New(units, 0))
-	nanos := fractional.Mul(decimal.New(1000000000, 0)).IntPart()
+	nanos := fractional.Mul(decimal.New(1000000000, 0)).Round(0).IntPart()
+
+	// Normalize: fold whole billions into units
+	units += nanos / 1_000_000_000
+	nanos = nanos % 1_000_000_000
+
+	// Adjust signs so units and nanos have same overall sign
+	if nanos < 0 && units > 0 {
+		units--
+		nanos += 1_000_000_000
+	} else if nanos > 0 && units < 0 {
+		units++
+		nanos -= 1_000_000_000
+	}
+
+	// Validate nanos bounds and int32 range
+	if nanos < -999_999_999 || nanos > 999_999_999 || nanos < int64(int32(-2147483648)) || nanos > int64(int32(2147483647)) {
+		// Clamp to valid range
+		if nanos > 999_999_999 {
+			nanos = 999_999_999
+		} else if nanos < -999_999_999 {
+			nanos = -999_999_999
+		}
+	}
 
 	return &money.Money{
 		CurrencyCode: currencyCode,

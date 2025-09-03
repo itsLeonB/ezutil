@@ -61,6 +61,20 @@ func TestDecimalToMoney(t *testing.T) {
 			expectedUnits: -50,
 			expectedNanos: -250000000,
 		},
+		{
+			name:          "value with over 1 billion nanos",
+			decimal:       decimal.NewFromFloat(1.5),
+			currencyCode:  "USD",
+			expectedUnits: 1,
+			expectedNanos: 500000000,
+		},
+		{
+			name:          "negative with sign normalization",
+			decimal:       decimal.NewFromFloat(-0.5),
+			currencyCode:  "USD",
+			expectedUnits: 0,
+			expectedNanos: -500000000,
+		},
 	}
 
 	for _, tt := range tests {
