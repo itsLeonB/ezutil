@@ -45,11 +45,16 @@ func (j *Job) Run() {
 	latency := MeasureLatency(func() { jobErr = j.runFunc() })
 
 	if jobErr != nil {
+		j.doCleanup()
 		j.logger.Fatalf("error running job: %v", jobErr)
+		return
 	}
 
+	j.doCleanup()
 	j.logger.Infof("success running job for %d ms", latency.Milliseconds())
+}
 
+func (j *Job) doCleanup() {
 	if j.cleanupFunc != nil {
 		j.logger.Info("cleaning up job...")
 		if err := j.cleanupFunc(); err != nil {
