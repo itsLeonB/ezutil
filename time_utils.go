@@ -42,3 +42,9 @@ func FormatTimeNullable(t time.Time, layout string) string {
 
 	return t.Format(layout)
 }
+
+func MeasureLatency(f func()) time.Duration {
+	start := time.Now()
+	f()
+	return time.Since(start)
+}
