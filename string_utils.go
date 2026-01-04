@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
-	"github.com/rotisserie/eris"
+	"github.com/itsLeonB/ungerr"
 )
 
 // Parse converts a string value to the specified type T.
@@ -35,7 +35,7 @@ func Parse[T any](value string) (T, error) {
 	}
 
 	if err != nil {
-		return zero, eris.Wrapf(err, "failed to parse value '%s' as %T", value, zero)
+		return zero, ungerr.Wrapf(err, "failed to parse value '%s' as %T", value, zero)
 	}
 
 	return parsed.(T), nil
@@ -46,14 +46,14 @@ func Parse[T any](value string) (T, error) {
 // Returns an error if length is non-positive or random generation fails.
 func GenerateRandomString(length int) (string, error) {
 	if length <= 0 {
-		return "", eris.New("length must be greater than 0")
+		return "", ungerr.Unknown("length must be greater than 0")
 	}
 
 	randomBytes := make([]byte, length)
 
 	_, err := io.ReadFull(rand.Reader, randomBytes)
 	if err != nil {
-		return "", eris.Wrap(err, "failed to generate random string")
+		return "", ungerr.Wrap(err, "failed to generate random string")
 	}
 
 	return base64.URLEncoding.EncodeToString(randomBytes), nil

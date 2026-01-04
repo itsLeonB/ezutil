@@ -3,7 +3,7 @@ package ezutil
 import (
 	"time"
 
-	"github.com/rotisserie/eris"
+	"github.com/itsLeonB/ungerr"
 	"github.com/shopspring/decimal"
 	"google.golang.org/genproto/googleapis/type/money"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -77,17 +77,17 @@ func DecimalToMoneyRounded(d decimal.Decimal, currencyCode string) *money.Money 
 // ValidateMoney checks if Money values are valid
 func ValidateMoney(m *money.Money) error {
 	if m == nil {
-		return eris.New("money cannot be nil")
+		return ungerr.Unknown("money cannot be nil")
 	}
 
 	// Nanos must be in range [-999,999,999, 999,999,999]
 	if m.Nanos < -999999999 || m.Nanos > 999999999 {
-		return eris.Errorf("nanos out of range: %d", m.Nanos)
+		return ungerr.Unknownf("nanos out of range: %d", m.Nanos)
 	}
 
 	// Units and nanos must have the same sign (or one of them is zero)
 	if (m.Units > 0 && m.Nanos < 0) || (m.Units < 0 && m.Nanos > 0) {
-		return eris.Errorf("units (%d) and nanos (%d) must have same sign", m.Units, m.Nanos)
+		return ungerr.Unknownf("units (%d) and nanos (%d) must have same sign", m.Units, m.Nanos)
 	}
 
 	return nil
