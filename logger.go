@@ -1,6 +1,9 @@
 package ezutil
 
-import "github.com/itsLeonB/ezutil/v2/internal"
+import (
+	"github.com/itsLeonB/ezutil/v2/internal"
+	"github.com/pressly/goose/v3"
+)
 
 type Logger interface {
 	Debug(args ...any)
@@ -13,6 +16,8 @@ type Logger interface {
 	Warnf(format string, args ...any)
 	Errorf(format string, args ...any)
 	Fatalf(format string, args ...any)
+
+	goose.Logger
 }
 
 func NewSimpleLogger(namespace string, useColor bool, minLevel int) Logger {

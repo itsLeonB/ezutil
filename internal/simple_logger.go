@@ -86,3 +86,8 @@ func (s *SimpleLogger) Fatalf(format string, args ...any) {
 	s.outputf(levelFatal, format, args...)
 	os.Exit(1)
 }
+
+// Implementations for goose.Logger
+func (s *SimpleLogger) Print(args ...any)                 { s.Info(args...) }
+func (s *SimpleLogger) Println(args ...any)               { s.Info(args...) }
+func (s *SimpleLogger) Printf(format string, args ...any) { s.Infof(format, args...) }
