@@ -2,6 +2,7 @@ package ezutil_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/itsLeonB/ezutil/v2"
@@ -19,15 +20,33 @@ type MockLogger struct {
 }
 
 func (m *MockLogger) Debug(args ...any)                 {}
-func (m *MockLogger) Info(args ...any)                  { m.InfoCalls = append(m.InfoCalls, args[0].(string)) }
+func (m *MockLogger) Info(args ...any)                  { 
+	if len(args) == 0 {
+		m.InfoCalls = append(m.InfoCalls, "")
+	} else {
+		m.InfoCalls = append(m.InfoCalls, fmt.Sprint(args...))
+	}
+}
 func (m *MockLogger) Warn(args ...any)                  {}
-func (m *MockLogger) Error(args ...any)                 { m.ErrorCalls = append(m.ErrorCalls, args[0].(string)) }
-func (m *MockLogger) Fatal(args ...any)                 { m.FatalCalls = append(m.FatalCalls, args[0].(string)) }
+func (m *MockLogger) Error(args ...any)                 { 
+	if len(args) == 0 {
+		m.ErrorCalls = append(m.ErrorCalls, "")
+	} else {
+		m.ErrorCalls = append(m.ErrorCalls, fmt.Sprint(args...))
+	}
+}
+func (m *MockLogger) Fatal(args ...any)                 { 
+	if len(args) == 0 {
+		m.FatalCalls = append(m.FatalCalls, "")
+	} else {
+		m.FatalCalls = append(m.FatalCalls, fmt.Sprint(args...))
+	}
+}
 func (m *MockLogger) Debugf(format string, args ...any) {}
-func (m *MockLogger) Infof(format string, args ...any)  { m.InfofCalls = append(m.InfofCalls, format) }
+func (m *MockLogger) Infof(format string, args ...any)  { m.InfofCalls = append(m.InfofCalls, fmt.Sprintf(format, args...)) }
 func (m *MockLogger) Warnf(format string, args ...any)  {}
 func (m *MockLogger) Errorf(format string, args ...any) {}
-func (m *MockLogger) Fatalf(format string, args ...any) { m.FatalfCalls = append(m.FatalfCalls, format) }
+func (m *MockLogger) Fatalf(format string, args ...any) { m.FatalfCalls = append(m.FatalfCalls, fmt.Sprintf(format, args...)) }
 func (m *MockLogger) Printf(format string, v ...interface{}) {}
 
 func TestNewJob(t *testing.T) {
@@ -151,7 +170,7 @@ func TestJob_Run_SetupError(t *testing.T) {
 
 	// The run function should not be called due to setup error
 	// Note: In real usage, Fatal would exit, but our mock doesn't
-	assert.Contains(t, logger.FatalfCalls, "error setting up job: %v")
+	assert.Contains(t, logger.FatalfCalls, "error setting up job: setup failed")
 }
 
 func TestJob_Run_RunError(t *testing.T) {
@@ -165,7 +184,7 @@ func TestJob_Run_RunError(t *testing.T) {
 	job := ezutil.NewJob(logger, runFunc)
 	job.Run()
 
-	assert.Contains(t, logger.FatalfCalls, "error running job: %v")
+	assert.Contains(t, logger.FatalfCalls, "error running job: run failed")
 }
 
 func TestJob_Run_CleanupError(t *testing.T) {
@@ -182,5 +201,5 @@ func TestJob_Run_CleanupError(t *testing.T) {
 	job := ezutil.NewJob(logger, runFunc).WithCleanupFunc(cleanupFunc)
 	job.Run()
 
-	assert.Contains(t, logger.FatalfCalls, "error cleaning up job: %v")
+	assert.Contains(t, logger.FatalfCalls, "error cleaning up job: cleanup failed")
 }

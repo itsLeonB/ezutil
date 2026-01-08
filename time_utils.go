@@ -43,6 +43,7 @@ func FormatTimeNullable(t time.Time, layout string) string {
 	return t.Format(layout)
 }
 
+// MeasureLatency measures and returns the execution duration of the provided function.
 func MeasureLatency(f func()) time.Duration {
 	start := time.Now()
 	f()

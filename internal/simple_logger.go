@@ -105,10 +105,10 @@ func (s *SimpleLogger) Fatalf(format string, args ...any) {
 }
 
 // Print logs a message using Info level (goose.Logger interface).
-func (s *SimpleLogger) Print(args ...any)                 { s.Info(args...) }
+func (s *SimpleLogger) Print(args ...any)                 { s.Info(fmt.Sprint(args...)) }
 
 // Println logs a message using Info level (goose.Logger interface).
-func (s *SimpleLogger) Println(args ...any)               { s.Info(args...) }
+func (s *SimpleLogger) Println(args ...any)               { s.Info(strings.TrimRight(fmt.Sprintln(args...), "\n")) }
 
 // Printf logs a formatted message using Info level (goose.Logger interface).
 func (s *SimpleLogger) Printf(format string, args ...any) { s.Infof(format, args...) }

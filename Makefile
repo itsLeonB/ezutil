@@ -1,17 +1,17 @@
-.PHONY: help lint test-all test-verbose test-coverage test-coverage-html test-clean install-pre-push-hook uninstall-pre-push-hook
+.PHONY: help lint build test test-verbose test-coverage test-coverage-html test-clean install-pre-push-hook uninstall-pre-push-hook
 
 help:
 	@echo "Available commands:"
 	@echo "  help                         - Show this help message"
 	@echo "  lint                         - Run golangci-lint on the codebase"
 	@echo "  build                        - Build the project"
-	@echo "  test-all                     - Run all tests"
+	@echo "  test                     	  - Run all tests"
 	@echo "  test-verbose                 - Run all tests with verbose output"
 	@echo "  test-coverage                - Run tests with coverage report for each package"
 	@echo "  test-coverage-html           - Run tests and generate HTML coverage reports for each package"
 	@echo "  test-clean                   - Clean test cache and run tests"
-	@echo "  make install-pre-push-hook   - Install the pre-push git hook"
-	@echo "  make uninstall-pre-push-hook - Uninstall the pre-push git hook"
+	@echo "  install-pre-push-hook        - Install the pre-push git hook"
+	@echo "  uninstall-pre-push-hook      - Uninstall the pre-push git hook"
 
 lint:
 	golangci-lint run ./...
@@ -19,7 +19,7 @@ lint:
 build:
 	go build -v ./...
 
-test-all:
+test:
 	@echo "Running all tests..."
 	go test ./...
 
@@ -29,18 +29,19 @@ test-verbose:
 
 test-coverage:
 	@echo "Running tests with coverage report for each package..."
-	@for pkg in $$(go list ./...); do \
-		echo "Coverage for $$pkg:"; \
-		go test -v -coverpkg=$$pkg -coverprofile=coverage-$$(basename $$pkg).out $$pkg; \
+	@for pkg in $(go list ./...); do \
+		pkgname=$(echo $pkg | tr '/' '-'); \
+		echo "Coverage for $pkg:"; \
+		go test -v -coverpkg=$pkg -coverprofile=coverage-$pkgname.out $pkg; \
 	done
 
 test-coverage-html:
 	@echo "Running tests and generating HTML coverage reports for each package..."
-	@for pkg in $$(go list ./...); do \
-		pkgname=$$(basename $$pkg); \
-		echo "Coverage for $$pkg:"; \
-		go test -v -coverpkg=$$pkg -coverprofile=coverage-$$pkgname.out $$pkg; \
-		go tool cover -html=coverage-$$pkgname.out -o coverage-$$pkgname.html; \
+	@for pkg in $(go list ./...); do \
+		pkgname=$(echo $pkg | tr '/' '-'); \
+		echo "Coverage for $pkg:"; \
+		go test -v -coverpkg=$pkg -coverprofile=coverage-$pkgname.out $pkg; \
+		go tool cover -html=coverage-$pkgname.out -o coverage-$pkgname.html; \
 	done
 	@echo "Coverage reports generated: coverage-*.html"
 
