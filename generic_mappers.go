@@ -1,3 +1,4 @@
+// Package ezutil provides utility functions for Go applications.
 package ezutil
 
 import (
