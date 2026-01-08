@@ -4,6 +4,7 @@ help:
 	@echo "Available commands:"
 	@echo "  help                         - Show this help message"
 	@echo "  lint                         - Run golangci-lint on the codebase"
+	@echo "  build                        - Build the project"
 	@echo "  test-all                     - Run all tests"
 	@echo "  test-verbose                 - Run all tests with verbose output"
 	@echo "  test-coverage                - Run tests with coverage report for each package"
@@ -14,6 +15,9 @@ help:
 
 lint:
 	golangci-lint run ./...
+
+build:
+	go build -v ./...
 
 test-all:
 	@echo "Running all tests..."
