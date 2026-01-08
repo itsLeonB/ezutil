@@ -6,8 +6,8 @@ help:
 	@echo "  lint                         - Run golangci-lint on the codebase"
 	@echo "  test-all                     - Run all tests"
 	@echo "  test-verbose                 - Run all tests with verbose output"
-	@echo "  test-coverage                - Run all tests with coverage report"
-	@echo "  test-coverage-html           - Run all tests and generate HTML coverage report"
+	@echo "  test-coverage                - Run tests with coverage report for each package"
+	@echo "  test-coverage-html           - Run tests and generate HTML coverage reports for each package"
 	@echo "  test-clean                   - Clean test cache and run tests"
 	@echo "  make install-pre-push-hook   - Install the pre-push git hook"
 	@echo "  make uninstall-pre-push-hook - Uninstall the pre-push git hook"
@@ -24,14 +24,21 @@ test-verbose:
 	go test -v ./...
 
 test-coverage:
-	@echo "Running all tests with coverage report..."
-	go test -v -cover -coverprofile=coverage.out -coverpkg=./... ./...
+	@echo "Running tests with coverage report for each package..."
+	@for pkg in $$(go list ./...); do \
+		echo "Coverage for $$pkg:"; \
+		go test -v -coverpkg=$$pkg -coverprofile=coverage-$$(basename $$pkg).out $$pkg; \
+	done
 
 test-coverage-html:
-	@echo "Running all tests and generating HTML coverage report..."
-	go test -v -cover -coverprofile=coverage.out -coverpkg=./... ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+	@echo "Running tests and generating HTML coverage reports for each package..."
+	@for pkg in $$(go list ./...); do \
+		pkgname=$$(basename $$pkg); \
+		echo "Coverage for $$pkg:"; \
+		go test -v -coverpkg=$$pkg -coverprofile=coverage-$$pkgname.out $$pkg; \
+		go tool cover -html=coverage-$$pkgname.out -o coverage-$$pkgname.html; \
+	done
+	@echo "Coverage reports generated: coverage-*.html"
 
 test-clean:
 	@echo "Cleaning test cache and running tests..."
