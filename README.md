@@ -287,12 +287,8 @@ ezutil/
 │       ├── ci.yml          # Main CI pipeline
 │       ├── test.yml        # Extended testing with security scans
 │       └── lint.yml        # Code linting
-├── test/                   # Comprehensive test suite
-│   ├── *_test.go          # Test files for each module
-│   ├── go.mod             # Test module dependencies
-│   └── go.sum             # Test dependency checksums
-├── config/                 # Configuration structures
 ├── internal/              # Internal utilities
+│   └── *_test.go          # Internal package tests
 ├── config_loader.go       # Environment configuration loading
 ├── errors.go              # Error handling utilities
 ├── gin_*.go              # Gin framework utilities
@@ -312,7 +308,7 @@ ezutil/
 
 ## 🧪 Testing
 
-EZUtil includes a comprehensive test suite with over 200 individual test cases covering all exported functions and methods. The tests are organized in a separate `test/` directory using the `ezutil_test` package for proper isolation.
+EZUtil includes a comprehensive test suite with over 200 individual test cases covering all exported functions and methods. The tests are organized alongside their respective source files using the `ezutil_test` package for proper isolation.
 
 ### Test Coverage
 
@@ -376,20 +372,15 @@ The project uses GitHub Actions for comprehensive CI/CD:
 ### Test Organization
 
 ```
-test/
-├── config_loader_test.go    # Configuration loading tests
-├── errors_test.go           # Error handling tests
-├── gin_utils_test.go        # Gin utilities tests
-├── gorm_scopes_test.go      # Database scope tests
-├── gorm_transactor_test.go  # Transaction management tests
-├── http_utils_test.go       # HTTP utility tests
-├── services_test.go         # Service layer tests (JWT, etc.)
+Tests are co-located with their respective source files:
+├── generic_mappers_test.go  # Generic mapper tests
 ├── slice_utils_test.go      # Slice operation tests
 ├── sql_utils_test.go        # SQL utility tests
 ├── string_utils_test.go     # String manipulation tests
-├── templ_utils_test.go      # Template utility tests
 ├── time_utils_test.go       # Time/date utility tests
-└── uuid_utils_test.go       # UUID utility tests
+├── uuid_utils_test.go       # UUID utility tests
+└── internal/
+    └── simple_logger_test.go # Internal logger tests
 ```
 
 ## 📚 Dependencies

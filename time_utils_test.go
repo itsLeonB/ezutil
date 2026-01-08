@@ -269,3 +269,36 @@ func TestTimeUtilsIntegration(t *testing.T) {
 	assert.Equal(t, "2024-01-15 00:00:00", startFormatted)
 	assert.Equal(t, "2024-01-15 23:59:59", endFormatted)
 }
+
+func TestMeasureLatency(t *testing.T) {
+	t.Run("measures execution time", func(t *testing.T) {
+		duration := ezutil.MeasureLatency(func() {
+			// Simulate some work
+			time.Sleep(10 * time.Millisecond)
+		})
+
+		// Should be at least 10ms but allow some variance
+		assert.GreaterOrEqual(t, duration.Milliseconds(), int64(10))
+		assert.Less(t, duration.Milliseconds(), int64(100)) // Should be less than 100ms
+	})
+
+	t.Run("measures zero time for instant function", func(t *testing.T) {
+		duration := ezutil.MeasureLatency(func() {
+			// Do nothing
+		})
+
+		// Should be very small but non-negative
+		assert.GreaterOrEqual(t, duration.Nanoseconds(), int64(0))
+		assert.Less(t, duration.Milliseconds(), int64(10)) // Should be less than 10ms
+	})
+
+	t.Run("handles function with return value", func(t *testing.T) {
+		var result int
+		duration := ezutil.MeasureLatency(func() {
+			result = 42
+		})
+
+		assert.Equal(t, 42, result)
+		assert.GreaterOrEqual(t, duration.Nanoseconds(), int64(0))
+	})
+}
