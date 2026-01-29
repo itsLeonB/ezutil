@@ -29,19 +29,19 @@ test-verbose:
 
 test-coverage:
 	@echo "Running tests with coverage report for each package..."
-	@for pkg in $(go list ./...); do \
-		pkgname=$(echo $pkg | tr '/' '-'); \
-		echo "Coverage for $pkg:"; \
-		go test -v -coverpkg=$pkg -coverprofile=coverage-$pkgname.out $pkg; \
+	@for pkg in $$(go list ./...); do \
+		pkgname=$$(echo $$pkg | tr '/' '-'); \
+		echo "Coverage for $$pkg:"; \
+		go test -v -coverpkg=$$pkg -coverprofile=coverage-$$pkgname.out $$pkg; \
 	done
 
 test-coverage-html:
 	@echo "Running tests and generating HTML coverage reports for each package..."
-	@for pkg in $(go list ./...); do \
-		pkgname=$(echo $pkg | tr '/' '-'); \
-		echo "Coverage for $pkg:"; \
-		go test -v -coverpkg=$pkg -coverprofile=coverage-$pkgname.out $pkg; \
-		go tool cover -html=coverage-$pkgname.out -o coverage-$pkgname.html; \
+	@for pkg in $$(go list ./...); do \
+		pkgname=$$(echo $$pkg | tr '/' '-'); \
+		echo "Coverage for $$pkg:"; \
+		go test -v -coverpkg=$$pkg -coverprofile=coverage-$$pkgname.out $$pkg; \
+		go tool cover -html=coverage-$$pkgname.out -o coverage-$$pkgname.html; \
 	done
 	@echo "Coverage reports generated: coverage-*.html"
 
