@@ -160,11 +160,11 @@ func (z *zerologAdapter) WithError(err error) ezutil.Logger {
 		ctx = ctx.Str(string(semconv.ErrorMessageKey), err.Error())
 	}
 
-	return &zerologAdapter{logger: ctx.Logger()}
+	return &zerologAdapter{logger: ctx.Logger(), baseWriter: z.baseWriter}
 }
 
 func (z *zerologAdapter) WithField(key string, value any) ezutil.Logger {
-	return &zerologAdapter{logger: z.logger.With().Interface(key, value).Logger()}
+	return &zerologAdapter{logger: z.logger.With().Interface(key, value).Logger(), baseWriter: z.baseWriter}
 }
 
 func (z *zerologAdapter) WithFields(fields map[string]any) ezutil.Logger {
@@ -172,7 +172,7 @@ func (z *zerologAdapter) WithFields(fields map[string]any) ezutil.Logger {
 	for k, v := range fields {
 		ctx = ctx.Interface(k, v)
 	}
-	return &zerologAdapter{logger: ctx.Logger()}
+	return &zerologAdapter{logger: ctx.Logger(), baseWriter: z.baseWriter}
 }
 
 func (z *zerologAdapter) WithContext(ctx context.Context) ezutil.Logger {
