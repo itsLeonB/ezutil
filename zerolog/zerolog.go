@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/itsLeonB/ezutil/v2"
 	"github.com/itsLeonB/ungerr"
@@ -129,4 +130,11 @@ func (z *zerologAdapter) WithContext(ctx context.Context) ezutil.Logger {
 
 func (z *zerologAdapter) Zerolog() zerolog.Logger {
 	return z.logger
+}
+
+func Instance(l ezutil.Logger) zerolog.Logger {
+	if adapter, ok := l.(*zerologAdapter); ok {
+		return adapter.logger
+	}
+	return zerolog.New(os.Stdout)
 }
