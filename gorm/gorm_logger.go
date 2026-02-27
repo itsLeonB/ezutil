@@ -15,7 +15,7 @@ type GormLogger struct {
 }
 
 func NewGormLogger(l ezutil.Logger) *GormLogger {
-	return &GormLogger{logger: l, level: logger.Warn}
+	return &GormLogger{logger: l, level: logger.Silent}
 }
 
 func (g *GormLogger) LogMode(level logger.LogLevel) logger.Interface {
