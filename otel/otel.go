@@ -19,10 +19,19 @@ type otelWriter struct {
 }
 
 func (w *otelWriter) Write(p []byte) (int, error) {
+	// Keep backward-compatible Write behavior: delegate to WriteWithContext
+	_, _ = w.WriteWithContext(context.Background(), p)
+	return len(p), nil
+}
+
+// WriteWithContext emits the log record using the provided context so that
+// trace/span correlation is preserved when available. This is the preferred
+// method for callers that have an active context to propagate.
+func (w *otelWriter) WriteWithContext(ctx context.Context, p []byte) (int, error) {
 	record := log.Record{}
 	record.SetTimestamp(time.Now())
 	record.SetBody(log.StringValue(string(p)))
-	w.logger.Emit(context.Background(), record)
+	w.logger.Emit(ctx, record)
 	return len(p), nil
 }
 
