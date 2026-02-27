@@ -2,12 +2,15 @@
 package zerolog
 
 import (
+	"context"
 	"fmt"
 	"io"
 
-	"github.com/itsLeonB/ezutil/v2/gorm"
+	"github.com/itsLeonB/ezutil/v2"
+	"github.com/itsLeonB/ungerr"
 	"github.com/rs/zerolog"
-	"gorm.io/gorm/logger"
+	semconv "go.opentelemetry.io/otel/semconv/v1.39.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type zerologAdapter struct {
@@ -79,10 +82,51 @@ func (z *zerologAdapter) Println(args ...any) { z.Info(args...) }
 // Printf logs a formatted message using Info level (goose.Logger interface).
 func (z *zerologAdapter) Printf(format string, args ...any) { z.Infof(format, args...) }
 
-func (z *zerologAdapter) Zerolog() zerolog.Logger {
-	return z.logger
+func (z *zerologAdapter) WithError(err error) ezutil.Logger {
+	ctx := z.logger.With()
+
+	switch e := err.(type) {
+	case *ungerr.UnknownError:
+		for _, attr := range e.ToLogAttrs() {
+			ctx = ctx.Interface(attr.Key, attr.Value)
+		}
+	case ungerr.AppError:
+		for _, attr := range e.ToLogAttrs() {
+			ctx = ctx.Interface(attr.Key, attr.Value)
+		}
+	default:
+		ctx = ctx.Str(string(semconv.ErrorTypeKey), fmt.Sprintf("%T", err))
+		ctx = ctx.Str(string(semconv.ErrorMessageKey), err.Error())
+	}
+
+	return &zerologAdapter{logger: ctx.Logger()}
 }
 
-func (z *zerologAdapter) AsGorm() logger.Interface {
-	return gorm.NewGormLogger(z)
+func (z *zerologAdapter) WithField(key string, value any) ezutil.Logger {
+	return &zerologAdapter{logger: z.logger.With().Interface(key, value).Logger()}
+}
+
+func (z *zerologAdapter) WithFields(fields map[string]any) ezutil.Logger {
+	ctx := z.logger.With()
+	for k, v := range fields {
+		ctx = ctx.Interface(k, v)
+	}
+	return &zerologAdapter{logger: ctx.Logger()}
+}
+
+func (z *zerologAdapter) WithContext(ctx context.Context) ezutil.Logger {
+	lctx := z.logger.With()
+
+	if span := trace.SpanFromContext(ctx); span.IsRecording() {
+		sc := span.SpanContext()
+		lctx = lctx.
+			Str("trace_id", sc.TraceID().String()).
+			Str("span_id", sc.SpanID().String())
+	}
+
+	return &zerologAdapter{logger: lctx.Logger()}
+}
+
+func (z *zerologAdapter) Zerolog() zerolog.Logger {
+	return z.logger
 }
