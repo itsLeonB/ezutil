@@ -1,6 +1,8 @@
 package ezutil
 
 import (
+	"io"
+
 	"github.com/itsLeonB/ezutil/v2/internal"
 	"github.com/pressly/goose/v3"
 )
@@ -26,4 +28,8 @@ func NewSimpleLogger(namespace string, useColor bool, minLevel int) Logger {
 		UseColor:  useColor,
 		MinLevel:  minLevel,
 	}
+}
+
+func NewZerologLogger(namespace string, writer io.Writer) Logger {
+	return internal.NewZerologAdapter(namespace, writer)
 }
