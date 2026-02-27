@@ -18,7 +18,7 @@ type zerologAdapter struct {
 	logger zerolog.Logger
 }
 
-func NewZerologAdapter(namespace string, writer io.Writer) *zerologAdapter {
+func NewZerologAdapter(writer io.Writer) *zerologAdapter {
 	return &zerologAdapter{
 		zerolog.New(writer).With().Timestamp().Logger(),
 	}
@@ -84,6 +84,10 @@ func (z *zerologAdapter) Println(args ...any) { z.Info(args...) }
 func (z *zerologAdapter) Printf(format string, args ...any) { z.Infof(format, args...) }
 
 func (z *zerologAdapter) WithError(err error) ezutil.Logger {
+	if err == nil {
+		return z
+	}
+
 	ctx := z.logger.With()
 
 	switch e := err.(type) {
@@ -128,13 +132,9 @@ func (z *zerologAdapter) WithContext(ctx context.Context) ezutil.Logger {
 	return &zerologAdapter{logger: lctx.Logger()}
 }
 
-func (z *zerologAdapter) Zerolog() zerolog.Logger {
-	return z.logger
-}
-
 func Instance(l ezutil.Logger) zerolog.Logger {
 	if adapter, ok := l.(*zerologAdapter); ok {
 		return adapter.logger
 	}
-	return zerolog.New(os.Stdout)
+	return zerolog.New(os.Stdout).With().Timestamp().Logger()
 }

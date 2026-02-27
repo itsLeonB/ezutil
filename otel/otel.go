@@ -29,7 +29,7 @@ func (w *otelWriter) Write(p []byte) (int, error) {
 func Init(appNamespace string) ezutil.Logger {
 	otelLogger := global.Logger(appNamespace)
 
-	return ezerolog.NewZerologAdapter(appNamespace, zerolog.MultiLevelWriter(
+	return ezerolog.NewZerologAdapter(zerolog.MultiLevelWriter(
 		os.Stdout,
 		&otelWriter{logger: otelLogger},
 	))

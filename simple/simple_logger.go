@@ -116,13 +116,17 @@ func (s *Logger) Fatalf(format string, args ...any) {
 }
 
 // Print logs a message using Info level (goose.Logger interface).
-func (s *Logger) Print(args ...any) { s.Info(fmt.Sprint(args...)) }
+func (s *Logger) Print(args ...any) { s.output(levelInfo, fmt.Sprint(args...)) }
 
 // Println logs a message using Info level (goose.Logger interface).
-func (s *Logger) Println(args ...any) { s.Info(strings.TrimRight(fmt.Sprintln(args...), "\n")) }
+func (s *Logger) Println(args ...any) {
+	s.output(levelInfo, strings.TrimRight(fmt.Sprintln(args...), "\n"))
+}
 
 // Printf logs a formatted message using Info level (goose.Logger interface).
-func (s *Logger) Printf(format string, args ...any) { s.Infof(format, args...) }
+func (s *Logger) Printf(format string, args ...any) {
+	s.output(levelInfo, fmt.Sprintf(format, args...))
+}
 
 func (s *Logger) WithError(err error) ezutil.Logger {
 	return s
