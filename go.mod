@@ -11,6 +11,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/genproto v0.0.0-20250826171959-ef028d996bc1
 	google.golang.org/protobuf v1.36.8
+	gorm.io/gorm v1.31.1
 )
 
 require (

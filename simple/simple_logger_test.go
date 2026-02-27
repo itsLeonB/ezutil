@@ -1,4 +1,4 @@
-package internal_test
+package simple_test
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/itsLeonB/ezutil/v2/internal"
+	"github.com/itsLeonB/ezutil/v2/simple"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ func captureOutput(f func()) string {
 }
 
 func TestSimpleLoggerDebug(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -46,7 +46,7 @@ func TestSimpleLoggerDebug(t *testing.T) {
 }
 
 func TestSimpleLoggerInfo(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -61,7 +61,7 @@ func TestSimpleLoggerInfo(t *testing.T) {
 }
 
 func TestSimpleLoggerWarn(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -76,7 +76,7 @@ func TestSimpleLoggerWarn(t *testing.T) {
 }
 
 func TestSimpleLoggerError(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -91,7 +91,7 @@ func TestSimpleLoggerError(t *testing.T) {
 }
 
 func TestSimpleLoggerDebugf(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -106,7 +106,7 @@ func TestSimpleLoggerDebugf(t *testing.T) {
 }
 
 func TestSimpleLoggerInfof(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -121,7 +121,7 @@ func TestSimpleLoggerInfof(t *testing.T) {
 }
 
 func TestSimpleLoggerWarnf(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -136,7 +136,7 @@ func TestSimpleLoggerWarnf(t *testing.T) {
 }
 
 func TestSimpleLoggerErrorf(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -151,7 +151,7 @@ func TestSimpleLoggerErrorf(t *testing.T) {
 }
 
 func TestSimpleLoggerOutputFormatWithTimestamp(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -180,7 +180,7 @@ func TestSimpleLoggerDifferentNamespaces(t *testing.T) {
 
 	for _, ns := range namespaces {
 		t.Run(ns, func(t *testing.T) {
-			logger := &internal.SimpleLogger{
+			logger := &simple.Logger{
 				Namespace: ns,
 				UseColor:  false,
 				MinLevel:  0,
@@ -197,7 +197,7 @@ func TestSimpleLoggerDifferentNamespaces(t *testing.T) {
 }
 
 func TestSimpleLoggerWithColor(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  true,
 		MinLevel:  0,
@@ -216,7 +216,7 @@ func TestSimpleLoggerWithColor(t *testing.T) {
 
 func TestSimpleLoggerMinLevel(t *testing.T) {
 	t.Run("debug filtered out", func(t *testing.T) {
-		logger := &internal.SimpleLogger{
+		logger := &simple.Logger{
 			Namespace: "TEST",
 			UseColor:  false,
 			MinLevel:  1, // Info and above
@@ -230,7 +230,7 @@ func TestSimpleLoggerMinLevel(t *testing.T) {
 	})
 
 	t.Run("info allowed", func(t *testing.T) {
-		logger := &internal.SimpleLogger{
+		logger := &simple.Logger{
 			Namespace: "TEST",
 			UseColor:  false,
 			MinLevel:  1, // Info and above
@@ -244,7 +244,7 @@ func TestSimpleLoggerMinLevel(t *testing.T) {
 	})
 
 	t.Run("warn level filtering", func(t *testing.T) {
-		logger := &internal.SimpleLogger{
+		logger := &simple.Logger{
 			Namespace: "TEST",
 			UseColor:  false,
 			MinLevel:  2, // Warn and above
@@ -263,7 +263,7 @@ func TestSimpleLoggerMinLevel(t *testing.T) {
 }
 
 func TestSimpleLoggerGooseInterface(t *testing.T) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "TEST",
 		UseColor:  false,
 		MinLevel:  0,
@@ -300,18 +300,18 @@ func TestSimpleLoggerGooseInterface(t *testing.T) {
 func TestSimpleLoggerColorCodes(t *testing.T) {
 	tests := []struct {
 		level    string
-		logFunc  func(*internal.SimpleLogger)
+		logFunc  func(*simple.Logger)
 		expected string
 	}{
-		{"DEBUG", func(l *internal.SimpleLogger) { l.Debug("test") }, "\033[36m"},
-		{"INFO", func(l *internal.SimpleLogger) { l.Info("test") }, "\033[36m"},
-		{"WARN", func(l *internal.SimpleLogger) { l.Warn("test") }, "\033[33m"},
-		{"ERROR", func(l *internal.SimpleLogger) { l.Error("test") }, "\033[31m"},
+		{"DEBUG", func(l *simple.Logger) { l.Debug("test") }, "\033[36m"},
+		{"INFO", func(l *simple.Logger) { l.Info("test") }, "\033[36m"},
+		{"WARN", func(l *simple.Logger) { l.Warn("test") }, "\033[33m"},
+		{"ERROR", func(l *simple.Logger) { l.Error("test") }, "\033[31m"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.level, func(t *testing.T) {
-			logger := &internal.SimpleLogger{
+			logger := &simple.Logger{
 				Namespace: "TEST",
 				UseColor:  true,
 				MinLevel:  0,
@@ -334,7 +334,7 @@ func TestSimpleLoggerColorCodes(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkSimpleLoggerInfo(b *testing.B) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "BENCH",
 		UseColor:  false,
 		MinLevel:  1,
@@ -347,7 +347,7 @@ func BenchmarkSimpleLoggerInfo(b *testing.B) {
 }
 
 func BenchmarkSimpleLoggerInfof(b *testing.B) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "BENCH",
 		UseColor:  false,
 		MinLevel:  1,
@@ -360,7 +360,7 @@ func BenchmarkSimpleLoggerInfof(b *testing.B) {
 }
 
 func BenchmarkSimpleLoggerFilteredOut(b *testing.B) {
-	logger := &internal.SimpleLogger{
+	logger := &simple.Logger{
 		Namespace: "BENCH",
 		UseColor:  false,
 		MinLevel:  2, // Warn and above

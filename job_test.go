@@ -6,36 +6,38 @@ import (
 	"testing"
 
 	"github.com/itsLeonB/ezutil/v2"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm/logger"
 )
 
 // MockLogger for testing
 type MockLogger struct {
-	InfoCalls    []string
-	ErrorCalls   []string
-	FatalCalls   []string
-	InfofCalls   []string
-	FatalfCalls  []string
-	ShouldPanic  bool
+	InfoCalls   []string
+	ErrorCalls  []string
+	FatalCalls  []string
+	InfofCalls  []string
+	FatalfCalls []string
+	ShouldPanic bool
 }
 
-func (m *MockLogger) Debug(args ...any)                 {}
-func (m *MockLogger) Info(args ...any)                  { 
+func (m *MockLogger) Debug(args ...any) {}
+func (m *MockLogger) Info(args ...any) {
 	if len(args) == 0 {
 		m.InfoCalls = append(m.InfoCalls, "")
 	} else {
 		m.InfoCalls = append(m.InfoCalls, fmt.Sprint(args...))
 	}
 }
-func (m *MockLogger) Warn(args ...any)                  {}
-func (m *MockLogger) Error(args ...any)                 { 
+func (m *MockLogger) Warn(args ...any) {}
+func (m *MockLogger) Error(args ...any) {
 	if len(args) == 0 {
 		m.ErrorCalls = append(m.ErrorCalls, "")
 	} else {
 		m.ErrorCalls = append(m.ErrorCalls, fmt.Sprint(args...))
 	}
 }
-func (m *MockLogger) Fatal(args ...any)                 { 
+func (m *MockLogger) Fatal(args ...any) {
 	if len(args) == 0 {
 		m.FatalCalls = append(m.FatalCalls, "")
 	} else {
@@ -43,12 +45,21 @@ func (m *MockLogger) Fatal(args ...any)                 {
 	}
 }
 func (m *MockLogger) Debugf(format string, args ...any) {}
-func (m *MockLogger) Infof(format string, args ...any)  { m.InfofCalls = append(m.InfofCalls, fmt.Sprintf(format, args...)) }
+func (m *MockLogger) Infof(format string, args ...any) {
+	m.InfofCalls = append(m.InfofCalls, fmt.Sprintf(format, args...))
+}
 func (m *MockLogger) Warnf(format string, args ...any)  {}
 func (m *MockLogger) Errorf(format string, args ...any) {}
-func (m *MockLogger) Fatalf(format string, args ...any) { m.FatalfCalls = append(m.FatalfCalls, fmt.Sprintf(format, args...)) }
+func (m *MockLogger) Fatalf(format string, args ...any) {
+	m.FatalfCalls = append(m.FatalfCalls, fmt.Sprintf(format, args...))
+}
 func (m *MockLogger) Printf(format string, v ...interface{}) {}
-
+func (m *MockLogger) Zerolog() zerolog.Logger {
+	return zerolog.Logger{}
+}
+func (m *MockLogger) AsGorm() logger.Interface {
+	return nil
+}
 func TestNewJob(t *testing.T) {
 	logger := &MockLogger{}
 	runFunc := func() error { return nil }
