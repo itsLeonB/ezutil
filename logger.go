@@ -1,9 +1,9 @@
 package ezutil
 
 import (
+	"context"
+
 	"github.com/pressly/goose/v3"
-	"github.com/rs/zerolog"
-	"gorm.io/gorm/logger"
 )
 
 type Logger interface {
@@ -18,8 +18,10 @@ type Logger interface {
 	Errorf(format string, args ...any)
 	Fatalf(format string, args ...any)
 
-	Zerolog() zerolog.Logger
-	AsGorm() logger.Interface
+	WithError(err error) Logger
+	WithField(key string, value any) Logger
+	WithFields(fields map[string]any) Logger
+	WithContext(ctx context.Context) Logger
 
 	goose.Logger
 }

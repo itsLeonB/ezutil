@@ -2,14 +2,13 @@
 package simple
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/itsLeonB/ezutil/v2/gorm"
-	"github.com/rs/zerolog"
-	"gorm.io/gorm/logger"
+	"github.com/itsLeonB/ezutil/v2"
 )
 
 type logLevel string
@@ -125,10 +124,18 @@ func (s *Logger) Println(args ...any) { s.Info(strings.TrimRight(fmt.Sprintln(ar
 // Printf logs a formatted message using Info level (goose.Logger interface).
 func (s *Logger) Printf(format string, args ...any) { s.Infof(format, args...) }
 
-func (s *Logger) Zerolog() zerolog.Logger {
-	return zerolog.New(os.Stdout)
+func (s *Logger) WithError(err error) ezutil.Logger {
+	return s
 }
 
-func (s *Logger) AsGorm() logger.Interface {
-	return gorm.NewGormLogger(s)
+func (s *Logger) WithField(key string, value any) ezutil.Logger {
+	return s
+}
+
+func (s *Logger) WithFields(fields map[string]any) ezutil.Logger {
+	return s
+}
+
+func (s *Logger) WithContext(ctx context.Context) ezutil.Logger {
+	return s
 }
