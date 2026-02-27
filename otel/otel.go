@@ -52,14 +52,19 @@ func Init(appNamespace string) ezutil.Logger {
 
 // ctxMultiWriter is like io.MultiWriter but also supports WriteWithContext so
 // writers that accept a context can receive it when available.
-type ctxMultiWriter struct{
+type ctxMultiWriter struct {
 	writers []io.Writer
 }
 
 func (m *ctxMultiWriter) Write(p []byte) (int, error) {
 	var firstErr error
 	for _, w := range m.writers {
-		if _, err := w.Write(p); err != nil && firstErr == nil {
+		n, err := w.Write(p)
+		if err == nil && n < len(p) && firstErr == nil {
+			firstErr = io.ErrShortWrite
+			continue
+		}
+		if err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
@@ -70,19 +75,29 @@ func (m *ctxMultiWriter) Write(p []byte) (int, error) {
 }
 
 func (m *ctxMultiWriter) WriteWithContext(ctx context.Context, p []byte) (int, error) {
-	type withCtx interface{
+	type withCtx interface {
 		WriteWithContext(context.Context, []byte) (int, error)
 	}
 
 	var firstErr error
 	for _, w := range m.writers {
 		if wc, ok := w.(withCtx); ok {
-			if _, err := wc.WriteWithContext(ctx, p); err != nil && firstErr == nil {
+			n, err := wc.WriteWithContext(ctx, p)
+			if err == nil && n < len(p) && firstErr == nil {
+				firstErr = io.ErrShortWrite
+				continue
+			}
+			if err != nil && firstErr == nil {
 				firstErr = err
 			}
 			continue
 		}
-		if _, err := w.Write(p); err != nil && firstErr == nil {
+		n, err := w.Write(p)
+		if err == nil && n < len(p) && firstErr == nil {
+			firstErr = io.ErrShortWrite
+			continue
+		}
+		if err != nil && firstErr == nil {
 			firstErr = err
 		}
 	}
