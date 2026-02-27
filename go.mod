@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/itsLeonB/ungerr v0.3.0-pre1
+	github.com/itsLeonB/ungerr v0.3.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rs/zerolog v1.34.0
 	github.com/shopspring/decimal v1.4.0
