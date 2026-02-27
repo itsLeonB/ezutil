@@ -1,11 +1,14 @@
-// Package internal provides internal utilities for the ezutil package.
-package internal
+package simple
 
 import (
 	"fmt"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/itsLeonB/ezutil/v2/gorm"
+	"github.com/rs/zerolog"
+	"gorm.io/gorm/logger"
 )
 
 type logLevel string
@@ -18,10 +21,18 @@ const (
 	levelFatal logLevel = "FATAL"
 )
 
-type SimpleLogger struct {
+type Logger struct {
 	Namespace string
 	UseColor  bool
 	MinLevel  int
+}
+
+func NewLogger(namespace string, useColor bool, minLevel int) *Logger {
+	return &Logger{
+		Namespace: namespace,
+		UseColor:  useColor,
+		MinLevel:  minLevel,
+	}
 }
 
 var colors = map[logLevel]string{
@@ -40,7 +51,7 @@ var levelToInt = map[logLevel]int{
 	levelFatal: 4,
 }
 
-func (s *SimpleLogger) output(level logLevel, msg string) {
+func (s *Logger) output(level logLevel, msg string) {
 	if levelToInt[level] < s.MinLevel {
 		return
 	}
@@ -52,7 +63,7 @@ func (s *SimpleLogger) output(level logLevel, msg string) {
 	fmt.Printf("%s%s [%s %s] %s%s\n", time.Now().Format("15:04:05.000"), colorStart, s.Namespace, level, msg, colorReset)
 }
 
-func (s *SimpleLogger) outputf(level logLevel, format string, args ...any) {
+func (s *Logger) outputf(level logLevel, format string, args ...any) {
 	if levelToInt[level] < s.MinLevel {
 		return
 	}
@@ -61,54 +72,62 @@ func (s *SimpleLogger) outputf(level logLevel, format string, args ...any) {
 }
 
 // Debug logs a debug message.
-func (s *SimpleLogger) Debug(args ...any) {
+func (s *Logger) Debug(args ...any) {
 	s.output(levelDebug, strings.TrimRight(fmt.Sprintln(args...), "\n"))
 }
 
 // Info logs an info message.
-func (s *SimpleLogger) Info(args ...any) {
+func (s *Logger) Info(args ...any) {
 	s.output(levelInfo, strings.TrimRight(fmt.Sprintln(args...), "\n"))
 }
 
 // Warn logs a warning message.
-func (s *SimpleLogger) Warn(args ...any) {
+func (s *Logger) Warn(args ...any) {
 	s.output(levelWarn, strings.TrimRight(fmt.Sprintln(args...), "\n"))
 }
 
 // Error logs an error message.
-func (s *SimpleLogger) Error(args ...any) {
+func (s *Logger) Error(args ...any) {
 	s.output(levelError, strings.TrimRight(fmt.Sprintln(args...), "\n"))
 }
 
 // Fatal logs a fatal message and exits the program.
-func (s *SimpleLogger) Fatal(args ...any) {
+func (s *Logger) Fatal(args ...any) {
 	s.output(levelFatal, strings.TrimRight(fmt.Sprintln(args...), "\n"))
 	os.Exit(1)
 }
 
 // Debugf logs a formatted debug message.
-func (s *SimpleLogger) Debugf(format string, args ...any) { s.outputf(levelDebug, format, args...) }
+func (s *Logger) Debugf(format string, args ...any) { s.outputf(levelDebug, format, args...) }
 
 // Infof logs a formatted info message.
-func (s *SimpleLogger) Infof(format string, args ...any)  { s.outputf(levelInfo, format, args...) }
+func (s *Logger) Infof(format string, args ...any) { s.outputf(levelInfo, format, args...) }
 
 // Warnf logs a formatted warning message.
-func (s *SimpleLogger) Warnf(format string, args ...any)  { s.outputf(levelWarn, format, args...) }
+func (s *Logger) Warnf(format string, args ...any) { s.outputf(levelWarn, format, args...) }
 
 // Errorf logs a formatted error message.
-func (s *SimpleLogger) Errorf(format string, args ...any) { s.outputf(levelError, format, args...) }
+func (s *Logger) Errorf(format string, args ...any) { s.outputf(levelError, format, args...) }
 
 // Fatalf logs a formatted fatal message and exits the program.
-func (s *SimpleLogger) Fatalf(format string, args ...any) {
+func (s *Logger) Fatalf(format string, args ...any) {
 	s.outputf(levelFatal, format, args...)
 	os.Exit(1)
 }
 
 // Print logs a message using Info level (goose.Logger interface).
-func (s *SimpleLogger) Print(args ...any)                 { s.Info(fmt.Sprint(args...)) }
+func (s *Logger) Print(args ...any) { s.Info(fmt.Sprint(args...)) }
 
 // Println logs a message using Info level (goose.Logger interface).
-func (s *SimpleLogger) Println(args ...any)               { s.Info(strings.TrimRight(fmt.Sprintln(args...), "\n")) }
+func (s *Logger) Println(args ...any) { s.Info(strings.TrimRight(fmt.Sprintln(args...), "\n")) }
 
 // Printf logs a formatted message using Info level (goose.Logger interface).
-func (s *SimpleLogger) Printf(format string, args ...any) { s.Infof(format, args...) }
+func (s *Logger) Printf(format string, args ...any) { s.Infof(format, args...) }
+
+func (s *Logger) Zerolog() zerolog.Logger {
+	return zerolog.New(os.Stdout)
+}
+
+func (s *Logger) AsGorm() logger.Interface {
+	return gorm.NewGormLogger(s)
+}

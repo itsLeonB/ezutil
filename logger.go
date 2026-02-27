@@ -1,10 +1,9 @@
 package ezutil
 
 import (
-	"io"
-
-	"github.com/itsLeonB/ezutil/v2/internal"
 	"github.com/pressly/goose/v3"
+	"github.com/rs/zerolog"
+	"gorm.io/gorm/logger"
 )
 
 type Logger interface {
@@ -19,17 +18,8 @@ type Logger interface {
 	Errorf(format string, args ...any)
 	Fatalf(format string, args ...any)
 
+	Zerolog() zerolog.Logger
+	AsGorm() logger.Interface
+
 	goose.Logger
-}
-
-func NewSimpleLogger(namespace string, useColor bool, minLevel int) Logger {
-	return &internal.SimpleLogger{
-		Namespace: namespace,
-		UseColor:  useColor,
-		MinLevel:  minLevel,
-	}
-}
-
-func NewZerologLogger(namespace string, writer io.Writer) Logger {
-	return internal.NewZerologAdapter(namespace, writer)
 }
