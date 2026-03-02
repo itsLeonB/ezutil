@@ -1,7 +1,8 @@
 package ezutil
 
 import (
-	"github.com/itsLeonB/ezutil/v2/internal"
+	"context"
+
 	"github.com/pressly/goose/v3"
 )
 
@@ -17,13 +18,10 @@ type Logger interface {
 	Errorf(format string, args ...any)
 	Fatalf(format string, args ...any)
 
-	goose.Logger
-}
+	WithError(err error) Logger
+	WithField(key string, value any) Logger
+	WithFields(fields map[string]any) Logger
+	WithContext(ctx context.Context) Logger
 
-func NewSimpleLogger(namespace string, useColor bool, minLevel int) Logger {
-	return &internal.SimpleLogger{
-		Namespace: namespace,
-		UseColor:  useColor,
-		MinLevel:  minLevel,
-	}
+	goose.Logger
 }
